@@ -7,7 +7,7 @@ import {
 import { api, type VoiceResult } from "../api";
 import { useScenario, renderScenarioContext, type ScenarioInputs } from "../state";
 
-type Msg = { role: "user" | "assistant"; text: string };
+type Msg = { role: "user" | "assistant"; text: string; pending?: boolean };
 
 const SUGGESTED = [
   "Why is the recommendation 'Proceed with caution'?",
@@ -72,6 +72,9 @@ export function Assistant() {
       mr.start();
       recorderRef.current = mr;
       setRecState("recording");
+      // Drop a placeholder "🎤 Recording…" bubble in the chat so the user sees
+      // their input is being captured even before transcription comes back.
+      setMsgs((m) => [...m, { role: "user", text: "🎤 …", pending: true }]);
     } catch (e: any) {
       setRecState("error"); setRecError(e?.message ?? "Microphone permission denied.");
     }
@@ -81,6 +84,9 @@ export function Assistant() {
     const mr = recorderRef.current;
     if (mr && mr.state !== "inactive") {
       setRecState("uploading");
+      // Update the placeholder bubble while we wait for Gemini.
+      setMsgs((m) => m.map((msg, i) => i === m.length - 1 && msg.pending
+        ? { ...msg, text: "🎤 transcribing…" } : msg));
       mr.stop();
     }
     recorderRef.current = null;
@@ -89,18 +95,35 @@ export function Assistant() {
   async function sendAudio(blob: Blob) {
     try {
       const res = await api.voice(blob);
-      // Show what the user said as a chat bubble (verbatim).
-      const userText = res.transcript?.trim() || "(empty audio)";
-      setMsgs((m) => [...m, { role: "user", text: userText }]);
-      // Apply any extracted profile fields straight into the scenario.
+      const transcript = res.transcript?.trim() || "(no speech detected — try again)";
       const filled = applyVoiceToInputs(res, setScenarioInput);
-      // Render the agent's friendly acknowledgement.
-      const reply = res.reply || (filled.length
-        ? `Got it — filled ${filled.length} field${filled.length === 1 ? "" : "s"}: ${filled.join(", ")}.`
-        : "Got it. I didn't catch any specific business fields — try repeating with more detail.");
-      setMsgs((m) => [...m, { role: "assistant", text: reply }]);
+      const reply = res.reply?.trim() || (filled.length
+        ? `Got it — captured ${filled.length} field${filled.length === 1 ? "" : "s"}: ${filled.join(", ")}.`
+        : "Got it, but I didn't catch any specific business details. Try repeating with more detail (business type, district, capital).");
+      // Replace the placeholder bubble with the real transcript, then append
+      // the assistant's reply — both in one functional update so React renders
+      // them together.
+      setMsgs((m) => {
+        const next = [...m];
+        const last = next[next.length - 1];
+        if (last && last.pending) {
+          next[next.length - 1] = { role: "user", text: transcript };
+        } else {
+          next.push({ role: "user", text: transcript });
+        }
+        next.push({ role: "assistant", text: reply });
+        return next;
+      });
       setRecState("idle");
     } catch (e: any) {
+      // Drop the placeholder + surface the error in the chat too.
+      setMsgs((m) => {
+        const next = [...m];
+        const last = next[next.length - 1];
+        if (last && last.pending) next.pop();
+        next.push({ role: "assistant", text: `Voice transcription failed: ${String(e?.message ?? e).slice(0, 160)}` });
+        return next;
+      });
       setRecState("error"); setRecError(String(e?.message ?? e).slice(0, 200));
     }
   }
@@ -342,7 +365,8 @@ function Bubble({ m }: { m: Msg }) {
       <div
         className={clsx(
           "w-6 h-6 rounded-full grid place-items-center shrink-0 mt-0.5",
-          isUser ? "bg-navy text-white" : "bg-petrol/10 text-petrol"
+          isUser ? "bg-navy text-white" : "bg-petrol/10 text-petrol",
+          m.pending && "animate-pulse",
         )}
       >
         {isUser ? <User size={12} /> : <Bot size={12} />}
@@ -352,7 +376,8 @@ function Bubble({ m }: { m: Msg }) {
           "max-w-[80%] text-[13px] leading-relaxed px-3 py-2 rounded-xl2",
           isUser
             ? "bg-navy text-white rounded-tr-sm"
-            : "bg-white border border-line text-navy/90 rounded-tl-sm"
+            : "bg-white border border-line text-navy/90 rounded-tl-sm",
+          m.pending && "italic opacity-80",
         )}
       >
         {renderText(m.text)}
