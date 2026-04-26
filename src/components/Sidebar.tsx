@@ -2,6 +2,7 @@ import {
   LayoutDashboard, BarChart3, MapPin, Wallet,
   ShieldCheck, Sparkles, Plus, ArrowRight,
   ClipboardList, Lock, Check as CheckIcon,
+  Inbox, Building2, UserCircle,
 } from "lucide-react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
@@ -15,13 +16,23 @@ export type ViewKey =
   | "Financials"
   | "Overview"
   | "Explainability"
-  | "History";
+  | "History"
+  // Banker mode views:
+  | "Queue";
 
-const NAV: { icon: any; label: ViewKey }[] = [
+export type Mode = "founder" | "banker";
+
+const FOUNDER_NAV: { icon: any; label: ViewKey }[] = [
   { icon: ClipboardList,   label: "Profile" },
   { icon: MapPin,          label: "Location" },
   { icon: BarChart3,       label: "Market" },
   { icon: Wallet,          label: "Financials" },
+  { icon: LayoutDashboard, label: "Overview" },
+  { icon: ShieldCheck,     label: "Explainability" },
+];
+
+const BANKER_NAV: { icon: any; label: ViewKey }[] = [
+  { icon: Inbox,           label: "Queue" },
   { icon: LayoutDashboard, label: "Overview" },
   { icon: ShieldCheck,     label: "Explainability" },
 ];
@@ -37,12 +48,22 @@ const relTime = (iso: string) => {
   return `${Math.round(dt / 86400)}d`;
 };
 
-export function Sidebar({ active, onChange }: { active: ViewKey; onChange: (v: ViewKey) => void }) {
+export function Sidebar({
+  active, onChange, mode, onModeChange,
+}: {
+  active: ViewKey;
+  onChange: (v: ViewKey) => void;
+  mode: Mode;
+  onModeChange: (m: Mode) => void;
+}) {
   const { reset, result, hydrate, completion } = useScenario();
   const [recent, setRecent] = useState<HistoryItem[]>([]);
 
-  // Lock rules: every metric needs Profile first; Overview needs at least one metric.
+  const NAV = mode === "founder" ? FOUNDER_NAV : BANKER_NAV;
+
+  // Lock rules apply only to founder mode. In banker mode, all views are open.
   const isLocked = (label: ViewKey) => {
+    if (mode === "banker") return false;
     if (label === "Profile" || label === "History" || label === "Explainability") return false;
     if (!completion.profile) return true;
     if (label === "Overview") return !completion.anyMetric;
@@ -85,14 +106,38 @@ export function Sidebar({ active, onChange }: { active: ViewKey; onChange: (v: V
         </div>
       </div>
 
+      {/* Mode toggle: Founder vs Banker */}
       <div className="px-3 mt-2">
-        <button
-          onClick={() => { reset(); onChange("Profile"); }}
-          className="w-full mb-3 px-3 py-2.5 rounded-lg bg-petrol text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-navy-700 transition shadow-soft"
-        >
-          <Plus size={14} /> New analysis
-        </button>
-        <div className="label px-3 mb-1">Workspace</div>
+        <div className="seg w-full">
+          <button
+            onClick={() => { onModeChange("founder"); onChange("Profile"); }}
+            className={clsx("seg-btn flex items-center justify-center gap-1.5", mode === "founder" && "seg-btn-active")}
+          >
+            <UserCircle size={12} /> Founder
+          </button>
+          <button
+            onClick={() => { onModeChange("banker"); onChange("Queue"); }}
+            className={clsx("seg-btn flex items-center justify-center gap-1.5", mode === "banker" && "seg-btn-active")}
+          >
+            <Building2 size={12} /> Banker
+          </button>
+        </div>
+      </div>
+
+      <div className="px-3 mt-3">
+        {mode === "founder" ? (
+          <button
+            onClick={() => { reset(); onChange("Profile"); }}
+            className="w-full mb-3 px-3 py-2.5 rounded-lg bg-petrol text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-navy-700 transition shadow-soft"
+          >
+            <Plus size={14} /> New analysis
+          </button>
+        ) : (
+          <div className="w-full mb-3 px-3 py-2 rounded-lg bg-emerald/10 text-emerald text-[12px] font-semibold flex items-center justify-center gap-2">
+            <Inbox size={13} /> Reviewing live applications
+          </div>
+        )}
+        <div className="label px-3 mb-1">{mode === "founder" ? "Workspace" : "Banker workspace"}</div>
         <nav className="space-y-0.5">
           {NAV.map((n) => {
             const isActive = n.label === active;
@@ -124,51 +169,62 @@ export function Sidebar({ active, onChange }: { active: ViewKey; onChange: (v: V
         </nav>
       </div>
 
-      <div className="px-3 mt-6 flex-1 min-h-0 flex flex-col">
-        <button
-          onClick={() => onChange("History")}
-          className="flex items-center justify-between px-3 mb-2 group"
-        >
-          <span className="label group-hover:text-navy transition">Recent</span>
-          <span className="text-[10px] text-petrol font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-            View all <ArrowRight size={10} />
-          </span>
-        </button>
-        <div className="space-y-1 overflow-y-auto pr-1">
-          {recent.length === 0 && (
-            <div className="text-[11px] text-muted px-3 py-2">No analyses yet.</div>
-          )}
-          {recent.map((r) => {
-            const isActive = result?.scenario_id === r.scenario_id;
-            return (
-              <button
-                key={r.scenario_id}
-                onClick={() => openScenario(r.scenario_id)}
-                className={clsx(
-                  "nav-item w-full text-left",
-                  isActive && "bg-navy/5 text-navy"
-                )}
-              >
-                <span className={clsx("w-2 h-2 rounded-full shrink-0", dot(r.short_label))} />
-                <div className="flex-1 min-w-0 leading-tight">
-                  <div className="text-[13px] text-navy font-medium truncate">{r.business_type}</div>
-                  <div className="text-[11px] text-muted truncate">{r.location.split(",")[0]} · {r.composite_score}/100</div>
-                </div>
-                <span className="text-[10px] text-muted shrink-0">{relTime(r.created_at)}</span>
-              </button>
-            );
-          })}
+      {mode === "founder" ? (
+        <div className="px-3 mt-6 flex-1 min-h-0 flex flex-col">
+          <button
+            onClick={() => onChange("History")}
+            className="flex items-center justify-between px-3 mb-2 group"
+          >
+            <span className="label group-hover:text-navy transition">Recent</span>
+            <span className="text-[10px] text-petrol font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
+              View all <ArrowRight size={10} />
+            </span>
+          </button>
+          <div className="space-y-1 overflow-y-auto pr-1">
+            {recent.length === 0 && (
+              <div className="text-[11px] text-muted px-3 py-2">No analyses yet.</div>
+            )}
+            {recent.map((r) => {
+              const isActive = result?.scenario_id === r.scenario_id;
+              return (
+                <button
+                  key={r.scenario_id}
+                  onClick={() => openScenario(r.scenario_id)}
+                  className={clsx(
+                    "nav-item w-full text-left",
+                    isActive && "bg-navy/5 text-navy"
+                  )}
+                >
+                  <span className={clsx("w-2 h-2 rounded-full shrink-0", dot(r.short_label))} />
+                  <div className="flex-1 min-w-0 leading-tight">
+                    <div className="text-[13px] text-navy font-medium truncate">{r.business_type}</div>
+                    <div className="text-[11px] text-muted truncate">{r.location.split(",")[0]} · {r.composite_score}/100</div>
+                  </div>
+                  <span className="text-[10px] text-muted shrink-0">{relTime(r.created_at)}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       <div className="mt-auto p-3">
         <div className="card p-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-petrol text-white grid place-items-center text-sm font-semibold">
-            AK
+          <div className={clsx(
+            "w-9 h-9 rounded-full text-white grid place-items-center text-sm font-semibold",
+            mode === "banker" ? "bg-petrol" : "bg-emerald",
+          )}>
+            {mode === "banker" ? "AK" : "FN"}
           </div>
           <div className="flex-1 leading-tight">
-            <div className="text-[13px] font-semibold text-navy">Aziza Karimova</div>
-            <div className="text-[11px] text-muted">SME Credit Analyst · Tashkent</div>
+            <div className="text-[13px] font-semibold text-navy">
+              {mode === "banker" ? "Aziza Karimova" : "Founder"}
+            </div>
+            <div className="text-[11px] text-muted">
+              {mode === "banker" ? "SME Credit Analyst · SQB" : "Demo session"}
+            </div>
           </div>
         </div>
       </div>

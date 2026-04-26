@@ -308,7 +308,7 @@ function BankActionCard() {
   );
 }
 
-import type { ViewKey } from "./Sidebar";
+import type { ViewKey, Mode } from "./Sidebar";
 import { CategoryView } from "./CategoryView";
 import { LocationAgent } from "./LocationAgent";
 import { MarketAgent } from "./MarketAgent";
@@ -316,6 +316,7 @@ import { FinancialsAgent } from "./FinancialsAgent";
 import { ProfileSetup } from "./ProfileSetup";
 import { OverviewOrchestrator } from "./OverviewOrchestrator";
 import { BorrowerLoanCard } from "./BorrowerLoanCard";
+import { BankerQueue } from "./BankerQueue";
 import { useScenario } from "../state";
 import { Lock as LockIcon } from "lucide-react";
 
@@ -419,10 +420,14 @@ function MarketSizeCard() {
   );
 }
 
-export function CenterWorkspace({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
+export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onChange: (v: ViewKey) => void; mode: Mode }) {
   const { completion } = useScenario();
 
-  const needsProfile = !completion.profile && (view === "Location" || view === "Market" || view === "Financials" || view === "Overview");
+  // In banker mode the founder-side gating doesn't apply — the banker just
+  // wants to browse / open queued applications.
+  const needsProfile = mode === "founder"
+    && !completion.profile
+    && (view === "Location" || view === "Market" || view === "Financials" || view === "Overview");
 
   return (
     <main className="flex-1 min-w-0 overflow-y-auto">
@@ -438,7 +443,9 @@ export function CenterWorkspace({ view, onChange }: { view: ViewKey; onChange: (
           </span>
         </div>
 
-        {view === "Profile"
+        {view === "Queue"
+          ? <BankerQueue onChange={onChange} />
+          : view === "Profile"
           ? <ProfileSetup onContinue={onChange} />
           : needsProfile
           ? <LockedScreen

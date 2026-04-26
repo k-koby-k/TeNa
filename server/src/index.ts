@@ -5,6 +5,7 @@ import { serve } from "@hono/node-server";
 
 import { mockAnalyze, mockChat } from "./mock.js";
 import * as store from "./store.js";
+import { seedHistory } from "./seed.js";
 import type {
   AnalyzeRequest, AnalyzeResponse, ChatRequest, ChatResponse,
 } from "./schemas.js";
@@ -150,6 +151,9 @@ app.get("/api/history/:id", (c) => {
   return c.json(entry);
 });
 
+// Pre-seed the banker queue so it isn't empty on first paint.
+seedHistory(store.record);
+
 serve({ fetch: app.fetch, port: PORT }, ({ port }) => {
-  console.log(`fintech server on http://localhost:${port}  mode=${USE_MOCK ? "mock" : "gemini"}`);
+  console.log(`fintech server on http://localhost:${port}  mode=${USE_MOCK ? "mock" : "gemini"}  seeded=${store.list().length} scenarios`);
 });
