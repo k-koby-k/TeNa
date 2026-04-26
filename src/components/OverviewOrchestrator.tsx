@@ -45,6 +45,17 @@ export function OverviewOrchestrator() {
     return out;
   }, [inputs]);
 
+  // Auto-trigger the analysis once when Overview is first opened with all
+  // required inputs but no result yet. Avoids the awkward "no values" screen.
+  // If the user explicitly clears the scenario (+ New analysis), the next
+  // visit to Overview will auto-run again — that's intentional.
+  useEffect(() => {
+    if (!hasResults && !running && blockers.length === 0) {
+      runAll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function runAll() {
     setRun({
       location:   { status: "running" },
@@ -165,22 +176,29 @@ export function OverviewOrchestrator() {
           <div className="flex-1">
             <div className="label">Agent orchestration</div>
             <h2 className="font-display font-bold text-navy text-lg">
-              {hasResults ? "Re-run the full analysis" : "Run the full analysis"}
+              {running
+                ? "Running agents…"
+                : hasResults
+                  ? "Analysis ready · re-run anytime"
+                  : blockers.length > 0
+                    ? "Waiting for required inputs"
+                    : "Starting analysis…"}
             </h2>
             <p className="text-[12px] text-muted mt-0.5">
-              All four agents fire in parallel against the inputs you've captured.
-              Total time ≈ 15–30 seconds.
+              {hasResults
+                ? "Agents auto-ran when you opened this view. Adjust inputs and re-run for a refreshed verdict."
+                : "All four agents fire in parallel against your inputs. Typical total time ≈ 15–30 seconds."}
             </p>
           </div>
           <button
             onClick={runAll}
             disabled={running || blockers.length > 0}
             className={clsx(
-              "px-4 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2 transition",
+              "px-4 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2 transition shrink-0",
               running || blockers.length > 0
                 ? "bg-navy/10 text-muted cursor-not-allowed"
                 : hasResults
-                  ? "bg-white text-petrol border border-petrol hover:bg-petrol/5"
+                  ? "bg-petrol text-white hover:bg-navy-700 shadow-soft"
                   : "bg-petrol text-white hover:bg-navy-700 shadow-soft",
             )}
           >

@@ -80,8 +80,8 @@ export function Sidebar({ active, onChange }: { active: ViewKey; onChange: (v: V
           <Sparkles size={18} />
         </div>
         <div>
-          <div className="font-display font-bold text-navy leading-tight">AI Business</div>
-          <div className="text-[11px] text-muted leading-tight">Platform · Decision Cockpit</div>
+          <div className="font-display font-bold text-navy leading-tight tracking-tight">TeNa</div>
+          <div className="text-[11px] text-muted leading-tight">SME advisor · decision cockpit</div>
         </div>
       </div>
 
