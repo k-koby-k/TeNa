@@ -50,6 +50,30 @@ app.post("/api/chat", async (c) => {
   }
 });
 
+// --- Voice intake (mic in the chat) -------------------------------------
+
+app.post("/api/agent/voice", async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) {
+      return c.json({ error: "bad_request", detail: "Upload an audio file in the 'file' form field." }, 400);
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      return c.json({ error: "too_large", detail: "Max 25 MB." }, 413);
+    }
+    const buf = Buffer.from(await file.arrayBuffer());
+    const { transcribeAndExtract } = await import("./agents/voice.js");
+    // MediaRecorder defaults to audio/webm in Chrome; Gemini accepts that.
+    const mime = file.type || "audio/webm";
+    const result = await transcribeAndExtract(buf.toString("base64"), mime);
+    return c.json(result);
+  } catch (e: any) {
+    console.error("[agent/voice]", e);
+    return c.json({ error: "agent_error", detail: String(e?.message ?? e) }, 502);
+  }
+});
+
 // --- Pitch-deck extraction (Profile auto-fill) --------------------------
 
 app.post("/api/agent/extract-profile", async (c) => {

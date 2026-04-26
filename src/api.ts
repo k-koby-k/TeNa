@@ -155,6 +155,12 @@ export interface FinancialsAgentResult {
   assumptions: string[];
 }
 
+export interface VoiceResult extends ExtractedProfile {
+  transcript: string;
+  language: string;
+  reply: string;
+}
+
 export interface ExtractedProfile {
   business_name?: string;
   business_type?: string;
@@ -197,4 +203,13 @@ export const api = {
   agentSynthesize: (req: any) => post<SynthesizeResult>("/api/agent/synthesize", req),
   geocodeSearch:   (q: string) => getJSON<{ items: PlaceHit[] }>(`/api/geocode/search?q=${encodeURIComponent(q)}`),
   extractProfile:  (file: File) => postFile<ExtractedProfile>("/api/agent/extract-profile", file),
+  voice:           (audio: Blob) => {
+    const fd = new FormData();
+    fd.append("file", audio, "voice.webm");
+    return fetch("/api/agent/voice", { method: "POST", body: fd })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`/api/agent/voice ${r.status}: ${(await r.text()).slice(0, 200)}`);
+        return r.json() as Promise<VoiceResult>;
+      });
+  },
 };

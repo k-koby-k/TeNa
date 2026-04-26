@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Send, Sparkles, Bot, User, ShieldCheck, RefreshCw } from "lucide-react";
-import { api } from "../api";
-import { useScenario, renderScenarioContext } from "../state";
+import {
+  Send, Sparkles, Bot, User, ShieldCheck, RefreshCw,
+  Mic, MicOff, Loader2, AlertCircle,
+} from "lucide-react";
+import { api, type VoiceResult } from "../api";
+import { useScenario, renderScenarioContext, type ScenarioInputs } from "../state";
 
 type Msg = { role: "user" | "assistant"; text: string };
 
@@ -32,17 +35,75 @@ function reply(q: string): string {
 }
 
 export function Assistant() {
-  const { result } = useScenario();
+  const { result, setInput: setScenarioInput } = useScenario();
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "assistant",
       text:
-        "Hi — I'm your **Business Case Assistant**. I'm grounded in the current Chilonzor coffee shop analysis. Ask me about the recommendation, the model scores, the risk drivers, or alternative scenarios.",
+        "Hi — I'm your **Business Case Assistant**. Type a question, or hit the mic and tell me about your business in Uzbek, Russian or English — I'll fill the form for you.",
     },
   ]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
+
+  // --- Mic / voice intake ---
+  const [recState, setRecState] = useState<"idle" | "recording" | "uploading" | "error">("idle");
+  const [recError, setRecError] = useState<string>("");
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+
+  async function startRecording() {
+    setRecError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setRecState("error"); setRecError("Microphone API not available in this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: pickMimeType() });
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType });
+        await sendAudio(blob);
+      };
+      mr.start();
+      recorderRef.current = mr;
+      setRecState("recording");
+    } catch (e: any) {
+      setRecState("error"); setRecError(e?.message ?? "Microphone permission denied.");
+    }
+  }
+
+  function stopRecording() {
+    const mr = recorderRef.current;
+    if (mr && mr.state !== "inactive") {
+      setRecState("uploading");
+      mr.stop();
+    }
+    recorderRef.current = null;
+  }
+
+  async function sendAudio(blob: Blob) {
+    try {
+      const res = await api.voice(blob);
+      // Show what the user said as a chat bubble (verbatim).
+      const userText = res.transcript?.trim() || "(empty audio)";
+      setMsgs((m) => [...m, { role: "user", text: userText }]);
+      // Apply any extracted profile fields straight into the scenario.
+      const filled = applyVoiceToInputs(res, setScenarioInput);
+      // Render the agent's friendly acknowledgement.
+      const reply = res.reply || (filled.length
+        ? `Got it — filled ${filled.length} field${filled.length === 1 ? "" : "s"}: ${filled.join(", ")}.`
+        : "Got it. I didn't catch any specific business fields — try repeating with more detail.");
+      setMsgs((m) => [...m, { role: "assistant", text: reply }]);
+      setRecState("idle");
+    } catch (e: any) {
+      setRecState("error"); setRecError(String(e?.message ?? e).slice(0, 200));
+    }
+  }
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -148,20 +209,46 @@ export function Assistant() {
                 send(input);
               }
             }}
-            placeholder="Ask about the recommendation, scores, or risks…"
+            placeholder={
+              recState === "recording" ? "Listening… speak in Uzbek, Russian or English"
+              : "Ask a question, or hit the mic to fill the form"
+            }
             rows={2}
-            className="input flex-1 resize-none text-[13px] leading-snug"
+            disabled={recState === "recording" || recState === "uploading"}
+            className="input flex-1 resize-none text-[13px] leading-snug disabled:bg-navy/[0.02]"
           />
           <button
+            onClick={recState === "recording" ? stopRecording : startRecording}
+            disabled={recState === "uploading"}
+            title={recState === "recording" ? "Stop recording" : "Speak — I'll fill the form"}
+            className={clsx(
+              "w-9 h-9 rounded-lg grid place-items-center transition shrink-0",
+              recState === "recording" ? "bg-rose-500 text-white animate-pulse"
+              : recState === "uploading" ? "bg-navy/10 text-muted cursor-wait"
+              : "bg-white text-navy border border-line hover:bg-navy/5",
+            )}
+          >
+            {recState === "uploading"
+              ? <Loader2 size={15} className="animate-spin" />
+              : recState === "recording"
+                ? <MicOff size={15} />
+                : <Mic size={15} />}
+          </button>
+          <button
             onClick={() => send(input)}
-            disabled={!input.trim()}
+            disabled={!input.trim() || recState === "recording" || recState === "uploading"}
             className="w-9 h-9 rounded-lg bg-petrol text-white grid place-items-center disabled:opacity-40 hover:bg-navy-700 transition shrink-0"
           >
             <Send size={15} />
           </button>
         </div>
+        {recState === "error" && (
+          <div className="mt-2 text-[11px] text-rose-600 flex items-start gap-1.5">
+            <AlertCircle size={11} className="mt-0.5 shrink-0" /> {recError}
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-between text-[10px] text-muted">
-          <span className="flex items-center gap-1.5"><ShieldCheck size={10} /> Model v3.2 · grounded in analysis</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck size={10} /> Grounded · uz / ru / en voice supported</span>
           <button
             onClick={() => setMsgs(msgs.slice(0, 1))}
             className="flex items-center gap-1 hover:text-navy"
@@ -200,6 +287,52 @@ function renderText(text: string) {
       </p>
     );
   });
+}
+
+/**
+ * Pick the best supported audio mime type for MediaRecorder.
+ * Chrome/Edge default to webm/opus; Safari needs audio/mp4.
+ */
+function pickMimeType(): string {
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+  if (typeof MediaRecorder === "undefined") return "audio/webm";
+  for (const c of candidates) if (MediaRecorder.isTypeSupported(c)) return c;
+  return "audio/webm";
+}
+
+/** Apply the voice-extracted fields into the scenario. Returns the friendly
+ *  list of field names that were set, for the assistant's confirmation. */
+function applyVoiceToInputs(
+  v: VoiceResult,
+  setInput: <K extends keyof ScenarioInputs>(k: K, v: ScenarioInputs[K]) => void,
+): string[] {
+  const friendly: Record<string, string> = {
+    business_name: "name", business_type: "type", format: "format", stage: "stage",
+    description: "description", target_audience: "audience", owner_experience: "experience",
+    district: "district", niche: "niche",
+    budget_uzs: "capital", monthly_rent_uzs: "rent", loan_uzs: "loan",
+    average_ticket_uzs: "ticket", customers_per_day: "customers/day",
+  };
+  const filled: string[] = [];
+  const set = <K extends keyof ScenarioInputs>(k: K, val: ScenarioInputs[K], label = String(k)) => {
+    setInput(k, val);
+    filled.push(friendly[label] ?? label);
+  };
+  if (v.business_name)    set("business_name", v.business_name, "business_name");
+  if (v.business_type)    set("business_type", v.business_type, "business_type");
+  if (v.format)           set("format", v.format, "format");
+  if (v.stage)            set("stage", v.stage, "stage");
+  if (v.description)      set("description", v.description, "description");
+  if (v.target_audience)  set("target_audience", v.target_audience, "target_audience");
+  if (v.owner_experience) set("owner_experience", v.owner_experience, "owner_experience");
+  if (v.district)         set("district", v.district, "district");
+  if (v.niche)            set("niche", v.niche, "niche");
+  if (v.budget_uzs)       set("budget_uzs", v.budget_uzs, "budget_uzs");
+  if (v.monthly_rent_uzs) set("monthly_rent_uzs", v.monthly_rent_uzs, "monthly_rent_uzs");
+  if (v.loan_uzs)         set("loan_uzs", v.loan_uzs, "loan_uzs");
+  if (v.average_ticket_uzs) set("average_ticket_uzs", v.average_ticket_uzs, "average_ticket_uzs");
+  if (v.customers_per_day)  set("customers_per_day", v.customers_per_day, "customers_per_day");
+  return filled;
 }
 
 function Bubble({ m }: { m: Msg }) {
