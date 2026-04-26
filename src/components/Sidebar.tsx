@@ -31,8 +31,15 @@ const FOUNDER_NAV: { icon: any; label: ViewKey }[] = [
   { icon: ShieldCheck,     label: "Explainability" },
 ];
 
+// Banker can do everything a founder can — needed for cases where a banker
+// fills the form on behalf of a walk-in applicant — plus the Queue inbox at
+// the top.
 const BANKER_NAV: { icon: any; label: ViewKey }[] = [
   { icon: Inbox,           label: "Queue" },
+  { icon: ClipboardList,   label: "Profile" },
+  { icon: MapPin,          label: "Location" },
+  { icon: BarChart3,       label: "Market" },
+  { icon: Wallet,          label: "Financials" },
   { icon: LayoutDashboard, label: "Overview" },
   { icon: ShieldCheck,     label: "Explainability" },
 ];
@@ -125,18 +132,13 @@ export function Sidebar({
       </div>
 
       <div className="px-3 mt-3">
-        {mode === "founder" ? (
-          <button
-            onClick={() => { reset(); onChange("Profile"); }}
-            className="w-full mb-3 px-3 py-2.5 rounded-lg bg-petrol text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-navy-700 transition shadow-soft"
-          >
-            <Plus size={14} /> New analysis
-          </button>
-        ) : (
-          <div className="w-full mb-3 px-3 py-2 rounded-lg bg-emerald/10 text-emerald text-[12px] font-semibold flex items-center justify-center gap-2">
-            <Inbox size={13} /> Reviewing live applications
-          </div>
-        )}
+        <button
+          onClick={() => { reset(); onChange("Profile"); }}
+          className="w-full mb-3 px-3 py-2.5 rounded-lg bg-petrol text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-navy-700 transition shadow-soft"
+        >
+          <Plus size={14} />
+          {mode === "founder" ? "New analysis" : "New application"}
+        </button>
         <div className="label px-3 mb-1">{mode === "founder" ? "Workspace" : "Banker workspace"}</div>
         <nav className="space-y-0.5">
           {NAV.map((n) => {
