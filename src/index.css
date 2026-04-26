@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html, body, #root { height: 100%; }
+
+body {
+  @apply bg-ivory text-ink font-sans antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+@layer components {
+  .card { @apply bg-card border border-line rounded-xl2 shadow-soft; }
+  .chip { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium; }
+  .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-navy/70 hover:bg-navy/5 hover:text-navy transition-colors cursor-pointer; }
+  .nav-item-active { @apply bg-navy text-white hover:bg-navy hover:text-white; }
+  .label { @apply text-[11px] uppercase tracking-wider text-muted font-semibold; }
+  .input { @apply w-full px-3 py-2 text-sm bg-white border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol; }
+  .seg { @apply flex bg-navy/5 rounded-lg p-1 text-xs font-medium; }
+  .seg-btn { @apply flex-1 text-center px-2 py-1.5 rounded-md text-navy/60 cursor-pointer transition; }
+  .seg-btn-active { @apply bg-white text-navy shadow-soft; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #d8d2c4; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* --- Print → PDF (browser's native "Save as PDF") --- */
+@media print {
+  /* Hide app chrome: sidebar nav, assistant rail, wizard footer, run buttons. */
+  aside, .no-print, [data-noprint] { display: none !important; }
+
+  /* Strip background tints and shadows for clean printed pages. */
+  body { background: #ffffff !important; }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #d8d2c4 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Avoid breaking inside critical blocks. */
+  section, .card, table, ul, ol { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Print map at high contrast (Leaflet's tile pane is canvas, prints OK in
+     modern browsers; this just keeps borders crisp). */
+  .leaflet-container { border: 1px solid #d8d2c4 !important; }
+
+  /* Force the main content to fill the printed page. */
+  main { overflow: visible !important; max-width: none !important; }
+}
