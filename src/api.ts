@@ -70,6 +70,8 @@ export interface HistoryItem {
   short_label: ShortVerdict;
   composite_score: number;
   created_at: string;
+  source?: "own" | "marketplace";
+  submitted_by?: string;
 }
 export interface HistoryEntry {
   scenario_id: string;
@@ -78,7 +80,7 @@ export interface HistoryEntry {
   short_label: ShortVerdict;
   composite_score: number;
   created_at: string;
-  request: AnalyzeRequest;
+  request: AnalyzeRequest & Partial<Record<string, unknown>>;
   response: AnalyzeResponse;
 }
 
@@ -196,7 +198,10 @@ export const api = {
   analyze: (req: AnalyzeRequest) => post<AnalyzeResponse>("/api/analyze", req),
   health: () => fetch("/api/health").then((r) => r.json()),
   history: () => getJSON<{ items: HistoryItem[] }>("/api/history"),
+  applications: () => getJSON<{ items: HistoryItem[] }>("/api/applications"),
   historyEntry: (id: string) => getJSON<HistoryEntry>(`/api/history/${id}`),
+  saveHistory: (req: AnalyzeRequest & Partial<Record<string, unknown>>, res: AnalyzeResponse) =>
+    post<HistoryEntry>("/api/history", { request: req, response: res }),
   agentLocation:   (req: LocationAgentRequest)   => post<LocationAgentResult>("/api/agent/location", req),
   agentMarket:     (req: MarketAgentRequest)     => post<MarketAgentResult>("/api/agent/market", req),
   agentFinancials: (req: FinancialsAgentRequest) => post<FinancialsAgentResult>("/api/agent/financials", req),

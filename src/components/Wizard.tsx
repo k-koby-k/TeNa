@@ -13,6 +13,7 @@ import clsx from "clsx";
 import { ArrowLeft, ArrowRight, Check, Lock, ClipboardList, MapPin, BarChart3, Wallet, LayoutDashboard } from "lucide-react";
 import type { ViewKey } from "./Sidebar";
 import { useScenario } from "../state";
+import { useT } from "../i18n";
 
 export const WIZARD_STEPS: { key: ViewKey; label: string; icon: any }[] = [
   { key: "Profile",    label: "Profile",    icon: ClipboardList },
@@ -41,6 +42,7 @@ function useStepStatus() {
  *  have a check, locked have a lock. Click to jump. */
 export function WizardSteps({ active, onChange }: { active: ViewKey; onChange: (v: ViewKey) => void }) {
   const steps = useStepStatus();
+  const t = useT();
   return (
     <div data-noprint className="card p-3">
       <ol className="flex items-center gap-2">
@@ -78,13 +80,13 @@ export function WizardSteps({ active, onChange }: { active: ViewKey; onChange: (
                 </span>
                 <span className="flex flex-col leading-tight min-w-0">
                   <span className="text-[10px] uppercase tracking-wider text-muted font-semibold">
-                    {s.locked ? "Locked" : s.done ? "Done" : isActive ? "Current" : "Pending"}
+                    {s.locked ? t("Locked") : s.done ? t("Done") : isActive ? t("Current") : t("Pending")}
                   </span>
                   <span className={clsx(
                     "text-[13px] font-semibold truncate flex items-center gap-1",
                     isActive ? "text-petrol" : s.done ? "text-emerald" : "text-navy",
                   )}>
-                    <Icon size={12} /> {s.label}
+                    <Icon size={12} /> {t(s.label)}
                   </span>
                 </span>
               </button>
@@ -116,6 +118,7 @@ export function WizardFooter({
   /** Inline message when it IS done — usually a one-liner about what's next. */
   nextHint?: string;
 }) {
+  const t = useT();
   const idx = WIZARD_STEPS.findIndex((s) => s.key === active);
   if (idx < 0) return null;
   const prev = WIZARD_STEPS[idx - 1];
@@ -129,7 +132,7 @@ export function WizardFooter({
             onClick={() => onChange(prev.key)}
             className="px-3 py-2 text-sm font-medium border border-line rounded-lg hover:bg-navy/5 flex items-center gap-1.5 text-navy"
           >
-            <ArrowLeft size={14} /> Back to {prev.label}
+            <ArrowLeft size={14} /> {t("Back to")} {t(prev.label)}
           </button>
         ) : <span />}
 
@@ -148,7 +151,7 @@ export function WizardFooter({
                 : "bg-navy/10 text-muted cursor-not-allowed",
             )}
           >
-            Continue to {next.label} <ArrowRight size={14} />
+            {t("Continue to")} {t(next.label)} <ArrowRight size={14} />
           </button>
         ) : <span />}
       </div>

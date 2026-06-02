@@ -7,9 +7,11 @@ import clsx from "clsx";
 import { useScenario } from "../state";
 import type { ViewKey } from "./Sidebar";
 import { WizardSteps, WizardFooter } from "./Wizard";
+import { useT } from "../i18n";
 
 export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
   const { inputs, setInput } = useScenario();
+  const t = useT();
 
   const fmt = (n: number) => (n ? n.toLocaleString("en-US").replace(/,/g, " ") : "");
   const parse = (s: string) => Number(s.replace(/[^\d]/g, "")) || 0;
@@ -25,8 +27,8 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
             <BarChart3 size={20} />
           </div>
           <div className="flex-1">
-            <div className="label">Step 3 · Market & sales</div>
-            <h1 className="font-display text-xl text-navy font-bold">How will it sell?</h1>
+            <div className="label">{t("Step 3 · Market & sales")}</div>
+            <h1 className="font-display text-xl text-navy font-bold">{t("How will it sell?")}</h1>
             <p className="text-sm text-muted mt-0.5">
               The numbers only you know — what one customer spends, how many you expect, how they
               find you. The Market agent will run from the Overview to size TAM / SAM / SOM.
@@ -38,9 +40,9 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
       {/* From-Profile context */}
       <div className="card p-4 bg-navy/[0.02]">
         <div className="grid grid-cols-3 gap-4 text-[12px]">
-          <FromProfile k="Concept" v={inputs.description || "(set on Profile)"} clamp />
-          <FromProfile k="Target audience" v={prettyAudience(inputs.target_audience)} />
-          <FromProfile k="Format / tier" v={`${cap(inputs.format)} format · ${cap(inputs.price_tier)} tier`} />
+          <FromProfile k={t("Concept")} v={inputs.description || "(set on Profile)"} clamp />
+          <FromProfile k={t("Target audience")} v={prettyAudience(inputs.target_audience)} />
+          <FromProfile k={t("Format / tier")} v={`${cap(inputs.format)} · ${cap(inputs.price_tier)}`} />
         </div>
         <div className="mt-2 text-[11px] text-muted flex items-center gap-1.5">
           <Info size={11} /> Read from Profile — change them on the Profile screen if needed.
@@ -49,39 +51,39 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
 
       <div className="grid grid-cols-2 gap-5">
         <div className="card p-5 space-y-4">
-          <div className="label">Unit economics — what only you know</div>
+          <div className="label">{t("Unit economics — what only you know")}</div>
 
-          <Field label="Average ticket" hint="UZS / customer · the single most important number" req>
+          <Field label={t("Average ticket")} hint="UZS / customer · the single most important number" req>
             <input className="input" placeholder="e.g. 42 000"
               value={fmt(inputs.average_ticket_uzs)}
               onChange={(e) => setInput("average_ticket_uzs", parse(e.target.value))} />
           </Field>
 
-          <Field label="Customers per day target" hint="at full capacity" req>
+          <Field label={t("Customers per day target")} hint="at full capacity" req>
             <input className="input" placeholder="e.g. 150"
               value={inputs.customers_per_day || ""}
               onChange={(e) => setInput("customers_per_day", Number(e.target.value) || 0)} />
           </Field>
 
-          <Field label="Days open per week">
+          <Field label={t("Days open per week")}>
             <Seg options={["5","6","7"]}
               value={String(inputs.days_open_per_week || 7)}
               onChange={(v) => setInput("days_open_per_week", Number(v))} />
           </Field>
 
-          <Field label="Sales channel">
+          <Field label={t("Sales channel")}>
             <select className="input"
               value={inputs.sales_channel}
               onChange={(e) => setInput("sales_channel", e.target.value as any)}>
-              <option value="">Select…</option>
-              <option value="storefront">Storefront only</option>
-              <option value="storefront_online">Storefront + online (delivery / pickup)</option>
-              <option value="online_only">Online only</option>
-              <option value="b2b">B2B / wholesale</option>
+              <option value="">{t("Select…")}</option>
+              <option value="storefront">{t("Storefront only")}</option>
+              <option value="storefront_online">{t("Storefront + online (delivery / pickup)")}</option>
+              <option value="online_only">{t("Online only")}</option>
+              <option value="b2b">{t("B2B / wholesale")}</option>
             </select>
           </Field>
 
-          <Field label="Comparable competitor" hint="optional · name a similar shop">
+          <Field label={t("Comparable competitor")} hint="optional · name a similar shop">
             <input className="input"
               placeholder="e.g. Caffeine, Bon!"
               value={inputs.comparable_competitor}
@@ -90,42 +92,42 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
         </div>
 
         <div className="card p-5 space-y-4">
-          <div className="label">Reach & differentiation</div>
+          <div className="label">{t("Reach & differentiation")}</div>
 
-          <Field label="Marketing reach">
+          <Field label={t("Marketing reach")}>
             <select className="input"
               value={inputs.marketing_reach}
               onChange={(e) => setInput("marketing_reach", e.target.value as any)}>
-              <option value="">Select…</option>
-              <option value="walk_by">Walk-by only</option>
-              <option value="district">District (signage + local ads)</option>
-              <option value="city">City-wide</option>
-              <option value="online_offline">Online + offline</option>
+              <option value="">{t("Select…")}</option>
+              <option value="walk_by">{t("Walk-by only")}</option>
+              <option value="district">{t("District (signage + local ads)")}</option>
+              <option value="city">{t("City-wide")}</option>
+              <option value="online_offline">{t("Online + offline")}</option>
             </select>
           </Field>
 
-          <Field label="Marketing budget" hint="M UZS / month">
+          <Field label={t("Marketing budget")} hint="M UZS / month">
             <input className="input"
               placeholder="e.g. 3"
               value={inputs.marketing_budget_m_uzs || ""}
               onChange={(e) => setInput("marketing_budget_m_uzs", Number(e.target.value) || 0)} />
           </Field>
 
-          <Field label="Niche" hint="agent extracts if blank">
+          <Field label={t("Niche")} hint="agent extracts if blank">
             <input className="input"
               placeholder="e.g. specialty coffee"
               value={inputs.niche}
               onChange={(e) => setInput("niche", e.target.value)} />
           </Field>
 
-          <Field label="Differentiation in 1 sentence" hint="why customers come to you, not the competitor">
+          <Field label={t("Differentiation in 1 sentence")} hint="why customers come to you, not the competitor">
             <textarea className="input min-h-[80px] text-[13px] leading-snug"
               placeholder="e.g. On-site roasting, evening dessert pairings"
               value={inputs.differentiation_one_liner}
               onChange={(e) => setInput("differentiation_one_liner", e.target.value)} />
           </Field>
 
-          <Field label="Price tier" hint="overrides the format default">
+          <Field label={t("Price tier")} hint="overrides the format default">
             <Seg options={["Value","Mid","Premium"]}
               value={cap(inputs.price_tier)}
               onChange={(v) => setInput("price_tier", v.toLowerCase() as any)} />

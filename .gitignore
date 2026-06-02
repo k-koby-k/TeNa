@@ -33,3 +33,4 @@ server/.env.local
 *.njsproj
 *.sln
 *.sw?
+.codex

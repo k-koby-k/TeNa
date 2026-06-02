@@ -12,8 +12,11 @@ import { api, type PlaceHit } from "../api";
 import { useScenario } from "../state";
 import type { ViewKey } from "./Sidebar";
 import { WizardSteps, WizardFooter } from "./Wizard";
+import { useT } from "../i18n";
 
-const TASHKENT_CENTRE: [number, number] = [41.2995, 69.2401];
+// Map opens centred on Hamid Olimjon metro — no visible label, the OSM tile
+// already shows the station name. User just picks a nearby spot themselves.
+const HAMID_OLIMJON: [number, number] = [41.3170, 69.2962];
 
 const pinIcon = L.divIcon({
   className: "site-pin",
@@ -23,6 +26,7 @@ const pinIcon = L.divIcon({
 
 export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
   const { inputs, setInput } = useScenario();
+  const t = useT();
 
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -39,8 +43,10 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
 
   useEffect(() => {
     if (!mapEl.current || mapRef.current) return;
+    // Open zoomed in on Hamid Olimjon so the reference marker is in view and
+    // the user can immediately pick somewhere nearby.
     const map = L.map(mapEl.current, { zoomControl: true, attributionControl: true })
-      .setView(coords ?? TASHKENT_CENTRE, coords ? 15 : 13);
+      .setView(coords ?? HAMID_OLIMJON, coords ? 16 : 16);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors", maxZoom: 19,
     }).addTo(map);
@@ -92,8 +98,8 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
             <MapPin size={20} />
           </div>
           <div className="flex-1">
-            <div className="label">Step 2 · Location & site</div>
-            <h1 className="font-display text-xl text-navy font-bold">Where will it open?</h1>
+            <div className="label">{t("Step 2 · Location & site")}</div>
+            <h1 className="font-display text-xl text-navy font-bold">{t("Where will it open?")}</h1>
             <p className="text-sm text-muted mt-0.5">
               Search or click the map to pin the candidate site, then add the lease facts you know.
               The Location agent will run from the Overview to fetch real competitors and synthesise the score.
@@ -108,7 +114,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
           {/* Search bar — proper input field, can't be missed */}
           <div className="card p-4">
             <label className="label flex items-center gap-1.5 mb-2">
-              <Search size={11} /> Search a place in Tashkent
+              <Search size={11} /> {t("Search a place in Tashkent")}
             </label>
             <div className="relative">
               <input
@@ -168,32 +174,32 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
 
         {/* Site facts */}
         <div className="card p-5 space-y-4">
-          <div className="label">Site facts</div>
-          <Field label="Site size" hint="sqm">
+          <div className="label">{t("Site facts")}</div>
+          <Field label={t("Site size")} hint="sqm">
             <input className="input" placeholder="e.g. 75"
               value={inputs.site_size_sqm || ""}
               onChange={(e) => setInput("site_size_sqm", Number(e.target.value) || 0)} />
           </Field>
-          <Field label="Monthly rent" hint="UZS">
+          <Field label={t("Monthly rent")} hint="UZS">
             <input className="input" placeholder="e.g. 14 000 000"
               value={inputs.monthly_rent_uzs ? inputs.monthly_rent_uzs.toLocaleString("en-US").replace(/,/g, " ") : ""}
               onChange={(e) => setInput("monthly_rent_uzs", Number(e.target.value.replace(/[^\d]/g, "")) || 0)} />
           </Field>
-          <Field label="Lease term" hint="months">
+          <Field label={t("Lease term")} hint="months">
             <Seg
               options={["6", "12", "24", "36", "60"]}
               value={String(inputs.lease_term_months || 12)}
               onChange={(v) => setInput("lease_term_months", Number(v))}
             />
           </Field>
-          <Field label="Rent deposit" hint="months">
+          <Field label={t("Rent deposit")} hint="months">
             <Seg
               options={["0", "1", "2", "3"]}
               value={String(inputs.rent_deposit_months ?? 0)}
               onChange={(v) => setInput("rent_deposit_months", Number(v))}
             />
           </Field>
-          <Field label="Operating hours">
+          <Field label={t("Operating hours")}>
             <select className="input"
               value={inputs.operating_hours}
               onChange={(e) => setInput("operating_hours", e.target.value as any)}>
@@ -204,7 +210,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
               <option value="24h">24 hours</option>
             </select>
           </Field>
-          <Field label="Site type" hint="affects visibility">
+          <Field label={t("Site type")} hint="affects visibility">
             <select className="input"
               value={inputs.site_type}
               onChange={(e) => setInput("site_type", e.target.value as any)}>
@@ -215,7 +221,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
               <option value="basement">Basement / underground</option>
             </select>
           </Field>
-          <Field label="Parking nearby">
+          <Field label={t("Parking nearby")}>
             <Seg options={["None","Limited","Good"]}
               value={inputs.parking ? inputs.parking[0].toUpperCase() + inputs.parking.slice(1) : ""}
               onChange={(v) => setInput("parking", v.toLowerCase() as any)} />
@@ -230,7 +236,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
       {/* Quick jumps */}
       <div className="card p-4 flex items-center gap-3 text-[12px] flex-wrap">
         <Target size={14} className="text-petrol" />
-        <span className="text-muted">Quick jump:</span>
+        <span className="text-muted">{t("Quick jump:")}</span>
         {[
           { name: "Chilonzor metro",  c: [41.2756, 69.2036] as [number, number] },
           { name: "Yunusobod metro",  c: [41.3637, 69.2879] as [number, number] },

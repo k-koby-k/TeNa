@@ -102,6 +102,10 @@ app.post("/api/agent/extract-profile", async (c) => {
 app.get("/api/geocode/search", async (c) => {
   const q = c.req.query("q") ?? "";
   if (!q.trim()) return c.json({ items: [] });
+  if (USE_MOCK) {
+    const { mockGeocodeSearch } = await import("./agents/mock-agents.js");
+    return c.json(mockGeocodeSearch(q));
+  }
   try {
     const { searchPlaces } = await import("./agents/geocode.js");
     return c.json({ items: await searchPlaces(q) });
@@ -118,6 +122,10 @@ app.post("/api/agent/location", async (c) => {
   if (typeof body.lat !== "number" || typeof body.lng !== "number" || !body.business_type) {
     return c.json({ error: "bad_request", detail: "lat, lng, business_type are required" }, 400);
   }
+  if (USE_MOCK) {
+    const { mockLocationAgent } = await import("./agents/mock-agents.js");
+    return c.json(mockLocationAgent(body));
+  }
   try {
     const { analyzeLocation } = await import("./agents/location.js");
     return c.json(await analyzeLocation(body));
@@ -130,6 +138,10 @@ app.post("/api/agent/location", async (c) => {
 app.post("/api/agent/market", async (c) => {
   const body = await c.req.json<{ brief: string; district?: string; business_type?: string }>();
   if (!body.brief?.trim()) return c.json({ error: "bad_request", detail: "brief is required" }, 400);
+  if (USE_MOCK) {
+    const { mockMarketAgent } = await import("./agents/mock-agents.js");
+    return c.json(mockMarketAgent(body));
+  }
   try {
     const { analyzeMarket } = await import("./agents/market.js");
     return c.json(await analyzeMarket(body));
@@ -142,6 +154,10 @@ app.post("/api/agent/market", async (c) => {
 app.post("/api/agent/synthesize", async (c) => {
   try {
     const body = await c.req.json<any>();
+    if (USE_MOCK) {
+      const { mockSynthesis } = await import("./agents/mock-agents.js");
+      return c.json(mockSynthesis(body));
+    }
     const { synthesize } = await import("./agents/synthesize.js");
     return c.json(await synthesize(body));
   } catch (e: any) {
@@ -158,6 +174,10 @@ app.post("/api/agent/financials", async (c) => {
       return c.json({ error: "bad_request", detail: `${k} is required` }, 400);
     }
   }
+  if (USE_MOCK) {
+    const { mockFinancialsAgent } = await import("./agents/mock-agents.js");
+    return c.json(mockFinancialsAgent(body));
+  }
   try {
     const { analyzeFinancials } = await import("./agents/financials.js");
     return c.json(await analyzeFinancials(body));
@@ -167,7 +187,21 @@ app.post("/api/agent/financials", async (c) => {
   }
 });
 
-app.get("/api/history", (c) => c.json({ items: store.list() }));
+app.get("/api/history", (c) => c.json({ items: store.list("own") }));
+
+app.get("/api/applications", (c) => c.json({ items: store.list("all") }));
+
+app.post("/api/history", async (c) => {
+  try {
+    const body = await c.req.json<{ request: AnalyzeRequest & object; response: AnalyzeResponse }>();
+    if (!body?.request || !body?.response?.scenario_id) {
+      return c.json({ error: "bad_request", detail: "request and response are required" }, 400);
+    }
+    return c.json(store.record(body.request, body.response));
+  } catch (e: any) {
+    return c.json({ error: "bad_request", detail: String(e?.message ?? e) }, 400);
+  }
+});
 
 app.get("/api/history/:id", (c) => {
   const entry = store.get(c.req.param("id"));

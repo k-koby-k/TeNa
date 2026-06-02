@@ -12,9 +12,11 @@ import clsx from "clsx";
 import { useScenario } from "../state";
 import type { ViewKey } from "./Sidebar";
 import { WizardSteps, WizardFooter } from "./Wizard";
+import { useT } from "../i18n";
 
 export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
   const { inputs, setInput } = useScenario();
+  const t = useT();
 
   const fmt = (n: number) => (n ? n.toLocaleString("en-US").replace(/,/g, " ") : "");
   const parse = (s: string) => Number(s.replace(/[^\d]/g, "")) || 0;
@@ -23,7 +25,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
     inputs.use_equipment_pct + inputs.use_renovation_pct + inputs.use_inventory_pct
     + inputs.use_working_capital_pct + inputs.use_marketing_pct;
 
-  const ready = inputs.budget_uzs > 0 && inputs.loan_uzs >= 0;
+  const ready = inputs.budget_uzs > 0 && inputs.loan_uzs >= 0 && inputs.monthly_rent_uzs > 0;
 
   return (
     <div className="space-y-5">
@@ -35,8 +37,8 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
             <Wallet size={20} />
           </div>
           <div className="flex-1">
-            <div className="label">Step 4 · Financials & lending</div>
-            <h1 className="font-display text-xl text-navy font-bold">Capital, collateral and risk</h1>
+            <div className="label">{t("Step 4 · Financials & lending")}</div>
+            <h1 className="font-display text-xl text-navy font-bold">{t("Capital, collateral and risk")}</h1>
             <p className="text-sm text-muted mt-0.5">
               The same questions a credit officer would ask. The viability agent reads all of this
               from the Overview and produces breakeven, ROI, DTI and a recommended product.
@@ -56,29 +58,29 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </div>
 
       {/* Section 1: Capital + use of funds */}
-      <Section title="Capital structure & use of funds" subtitle="How much, from where, spent on what.">
+      <Section title={t("Capital structure & use of funds")} subtitle="How much, from where, spent on what.">
         <div className="grid grid-cols-2 gap-5">
-          <Field label="Founder capital injection" hint="UZS · what you put in" req>
+          <Field label={t("Founder capital injection")} hint="UZS · what you put in" req>
             <input className="input" placeholder="e.g. 180 000 000"
               value={fmt(inputs.budget_uzs)}
               onChange={(e) => setInput("budget_uzs", parse(e.target.value))} />
           </Field>
-          <Field label="Loan amount requested" hint="UZS · 0 if no loan" req>
+          <Field label={t("Loan amount requested")} hint="UZS · 0 if no loan" req>
             <input className="input" placeholder="e.g. 120 000 000"
               value={fmt(inputs.loan_uzs)}
               onChange={(e) => setInput("loan_uzs", parse(e.target.value))} />
           </Field>
-          <Field label="Repayment horizon" hint="months">
+          <Field label={t("Repayment horizon")} hint="months">
             <Seg options={["12","24","36","48","60"]}
               value={String(inputs.repayment_months)}
               onChange={(v) => setInput("repayment_months", Number(v))} />
           </Field>
-          <Field label="Grace period" hint="months without principal repayment">
+          <Field label={t("Grace period")} hint="months without principal repayment">
             <Seg options={["0","1","3","6"]}
               value={String(inputs.grace_period_months)}
               onChange={(v) => setInput("grace_period_months", Number(v))} />
           </Field>
-          <Field label="Repayment frequency">
+          <Field label={t("Repayment frequency")}>
             <Seg options={["Monthly","Quarterly"]}
               value={inputs.repay_freq === "monthly" ? "Monthly" : "Quarterly"}
               onChange={(v) => setInput("repay_freq", v.toLowerCase() as any)} />
@@ -88,7 +90,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
         <div className="mt-5 pt-5 border-t border-line">
           <div className="flex items-end justify-between mb-3 gap-3">
             <div>
-              <div className="label">Use of funds breakdown</div>
+              <div className="label">{t("Use of funds breakdown")}</div>
               <div className="text-[11px] text-muted">How the total capital (founder + loan) is spent. Type % directly.</div>
             </div>
             <div className="flex items-center gap-2">
@@ -101,7 +103,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
                   setInput("use_marketing_pct", 10);
                 }}
                 className="text-[11px] px-2.5 py-1 border border-line rounded-md hover:bg-navy/5 text-navy"
-              >Use typical split</button>
+              >{t("Use typical split")}</button>
               <button
                 onClick={() => {
                   setInput("use_equipment_pct", 0);
@@ -111,20 +113,20 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
                   setInput("use_marketing_pct", 0);
                 }}
                 className="text-[11px] px-2.5 py-1 border border-line rounded-md hover:bg-navy/5 text-muted"
-              >Clear</button>
+              >{t("Clear")}</button>
             </div>
           </div>
 
           <div className="grid grid-cols-5 gap-3">
-            <PctInput label="Equipment"      color="bg-petrol"
+            <PctInput label={t("Equipment")}     color="bg-petrol"
               value={inputs.use_equipment_pct} onChange={(v) => setInput("use_equipment_pct", v)} />
-            <PctInput label="Renovations"    color="bg-teal"
+            <PctInput label={t("Renovations")}   color="bg-teal"
               value={inputs.use_renovation_pct} onChange={(v) => setInput("use_renovation_pct", v)} />
-            <PctInput label="Inventory"      color="bg-emerald"
+            <PctInput label={t("Inventory")}     color="bg-emerald"
               value={inputs.use_inventory_pct} onChange={(v) => setInput("use_inventory_pct", v)} />
-            <PctInput label="Working cap."   color="bg-amber"
+            <PctInput label={t("Working cap.")}  color="bg-amber"
               value={inputs.use_working_capital_pct} onChange={(v) => setInput("use_working_capital_pct", v)} />
-            <PctInput label="Marketing"      color="bg-rose-400"
+            <PctInput label={t("Marketing")}     color="bg-rose-400"
               value={inputs.use_marketing_pct} onChange={(v) => setInput("use_marketing_pct", v)} />
           </div>
 
@@ -163,7 +165,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 2: Collateral & guarantor */}
-      <Section title="Collateral & guarantor" subtitle="What secures the loan.">
+      <Section title={t("Collateral & guarantor")} subtitle="What secures the loan.">
         <div className="grid grid-cols-2 gap-5">
           <Field label="Collateral type">
             <select className="input"
@@ -199,7 +201,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 3: Founder financial standing */}
-      <Section title="Personal financial standing" subtitle="Used for debt-to-income.">
+      <Section title={t("Personal financial standing")} subtitle="Used for debt-to-income.">
         <div className="grid grid-cols-3 gap-5">
           <Field label="Existing debts" hint="M UZS / month">
             <input className="input" placeholder="e.g. 2"
@@ -220,7 +222,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 4: Risk acknowledgement */}
-      <Section title="Risk acknowledgement" subtitle="What's the worst case, and how do you cover it?" tone="amber">
+      <Section title={t("Risk acknowledgement")} subtitle="What's the worst case, and how do you cover it?" tone="amber">
         <Field label="Top risk you've identified" hint="in your own words" full>
           <textarea className="input min-h-[70px] text-[13px] leading-snug"
             placeholder="e.g. Local saturation; weekend competition; supply-chain delays for premium beans"
@@ -240,7 +242,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 5: Operating economics */}
-      <Section title="Operating economics" subtitle="Run-rate costs the agent can't infer.">
+      <Section title={t("Operating economics")} subtitle="Run-rate costs the agent can't infer.">
         <div className="grid grid-cols-2 gap-5">
           <Field label="Other monthly costs" hint="M UZS · utilities, software, accounting, cleaning">
             <input className="input" placeholder="e.g. 6"
@@ -259,7 +261,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
         active="Financials"
         onChange={onChange}
         currentDone={ready}
-        doneHint="Provide founder capital and loan amount to continue."
+        doneHint="Provide founder capital, loan amount, and monthly rent to continue."
         nextHint="All inputs captured. Open the Overview to run the full agentic analysis."
       />
     </div>

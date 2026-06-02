@@ -16,6 +16,7 @@ import {
 import clsx from "clsx";
 import { api, type LocationAgentResult, type PlaceHit, type MarketAgentResult, type FinancialsAgentResult, type AnalyzeResponse } from "../api";
 import { useScenario, type ScenarioInputs } from "../state";
+import { useT } from "../i18n";
 
 type AgentKey = "location" | "market" | "financials" | "synthesis";
 type Status = "pending" | "running" | "done" | "error";
@@ -28,8 +29,34 @@ const initialState: RunState = {
   synthesis:  { status: "pending" },
 };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Run an agent call with retry-on-429. The Gemini free tier rate-limits
+ * bursts; a throttled call usually succeeds a few seconds later. Backs off
+ * 3s → 6s → 10s, up to 3 retries, then gives up and throws.
+ */
+async function withRetry<T>(fn: () => Promise<T>, label = "agent"): Promise<T> {
+  const delays = [3000, 6000, 10000];
+  let lastErr: any;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      lastErr = e;
+      const msg = String(e?.message ?? e);
+      const is429 = msg.includes("429") || /quota|rate.?limit|exceeded/i.test(msg);
+      if (!is429 || attempt === delays.length) throw e;
+      console.warn(`[${label}] rate-limited, retrying in ${delays[attempt] / 1000}s…`);
+      await sleep(delays[attempt]);
+    }
+  }
+  throw lastErr;
+}
+
 export function OverviewOrchestrator() {
   const { inputs, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis } = useScenario();
+  const t = useT();
   const [run, setRun] = useState<RunState>(initialState);
   const running = Object.values(run).some((s) => s.status === "running");
   const allDone = Object.values(run).every((s) => s.status === "done");
@@ -38,9 +65,10 @@ export function OverviewOrchestrator() {
   const blockers = useMemo(() => {
     const out: string[] = [];
     if (!inputs.business_type)  out.push("business type");
-    if (inputs.pin_lat == null) out.push("map pin");
+    if (inputs.pin_lat == null || inputs.pin_lng == null) out.push("map pin");
     if (!inputs.average_ticket_uzs)   out.push("average ticket");
     if (!inputs.customers_per_day)    out.push("customers/day");
+    if (!inputs.monthly_rent_uzs)     out.push("monthly rent");
     if (!inputs.budget_uzs)           out.push("startup capital");
     return out;
   }, [inputs]);
@@ -64,7 +92,9 @@ export function OverviewOrchestrator() {
       synthesis:  { status: "pending" },
     });
 
-    const locP = api.agentLocation({
+    // The agent calls. Wrapped lazily (functions, not promises) so we can
+    // control WHEN each fires — the Gemini free tier rate-limits bursts.
+    const callLocation = () => api.agentLocation({
       lat: inputs.pin_lat!, lng: inputs.pin_lng!,
       business_type: inputs.business_type, format: inputs.format,
       business_name: inputs.business_name || undefined,
@@ -73,7 +103,7 @@ export function OverviewOrchestrator() {
       monthly_rent_uzs: inputs.monthly_rent_uzs || undefined,
       operating_hours: (inputs.operating_hours || undefined) as any,
     });
-    const mktP = api.agentMarket({
+    const callMarket = () => api.agentMarket({
       brief: inputs.description || `${inputs.business_type} in ${inputs.district}`,
       district: inputs.district || undefined,
       business_type: inputs.business_type || undefined,
@@ -87,7 +117,7 @@ export function OverviewOrchestrator() {
       comparable_competitor: inputs.comparable_competitor || undefined,
       niche: inputs.niche || undefined,
     });
-    const finP = api.agentFinancials({
+    const callFinancials = () => api.agentFinancials({
       business_type: inputs.business_type,
       district: inputs.district || "Tashkent",
       format: inputs.format,
@@ -99,10 +129,18 @@ export function OverviewOrchestrator() {
       monthly_rent_uzs: inputs.monthly_rent_uzs || undefined,
       average_ticket_uzs: inputs.average_ticket_uzs || undefined,
       expected_customers_per_day: inputs.customers_per_day || undefined,
+      site_size_sqm: inputs.site_size_sqm || undefined,
+      other_monthly_costs_m_uzs: inputs.other_monthly_costs_m_uzs || undefined,
+      revenue_ramp_months: inputs.revenue_ramp_months || undefined,
     } as any);
 
-    // Settle independently so partial failure is recoverable.
-    const [locR, mktR, finR] = await Promise.allSettled([locP, mktP, finP]);
+    // All three agents in parallel. Each is wrapped in withRetry so a
+    // transient 429 self-heals without failing the run.
+    const [locR, mktR, finR] = await Promise.allSettled([
+      withRetry(callLocation),
+      withRetry(callMarket),
+      withRetry(callFinancials),
+    ]);
 
     if (locR.status === "fulfilled") setLocationAgent(locR.value);
 
@@ -128,7 +166,7 @@ export function OverviewOrchestrator() {
     // Synthesis — only meaningful if all three upstream agents succeeded.
     if (locR.status === "fulfilled" && mktR.status === "fulfilled" && finR.status === "fulfilled") {
       try {
-        const synth = await api.agentSynthesize({
+        const synth = await withRetry(() => api.agentSynthesize({
           business_name: inputs.business_name,
           business_type: inputs.business_type,
           description: inputs.description,
@@ -143,11 +181,11 @@ export function OverviewOrchestrator() {
           collateral_type: inputs.collateral_type,
           has_cosigner: inputs.has_cosigner,
           contingency_runway_months: inputs.contingency_runway_months,
-        });
+        }));
         setSynthesis(synth);
         // Update the verdict's blurb (with the AI-written paragraph), the
         // factor lists, and the bank product/credit description.
-        setResult({
+        const finalResult = {
           ...nextResult,
           verdict: { ...nextResult.verdict, blurb: synth.blurb },
           factors: {
@@ -156,14 +194,35 @@ export function OverviewOrchestrator() {
             next_actions: synth.next_actions,
           },
           credit: { ...nextResult.credit, product: synth.bank_product },
-        });
+        };
+        setResult(finalResult);
+        saveToHistory(finalResult);
         setRun((s) => ({ ...s, synthesis: { status: "done" } }));
       } catch (e: any) {
+        saveToHistory(nextResult);
         setRun((s) => ({ ...s, synthesis: { status: "error", error: String(e?.message ?? e).slice(0, 120) } }));
       }
     } else {
+      saveToHistory(nextResult);
       setRun((s) => ({ ...s, synthesis: { status: "error", error: "Skipped — one or more upstream agents failed" } }));
     }
+  }
+
+  function saveToHistory(response: AnalyzeResponse) {
+    const request = {
+      ...inputs,
+      business_type: inputs.business_type,
+      district: response.location.split(",")[0] || inputs.district || "Tashkent",
+      city: inputs.city,
+      budget_uzs: inputs.budget_uzs,
+      loan_uzs: inputs.loan_uzs || undefined,
+      monthly_rent_uzs: inputs.monthly_rent_uzs || undefined,
+      format: inputs.format,
+      notes: inputs.notes || undefined,
+    };
+    api.saveHistory(request, response).catch((e) => {
+      console.warn("history save failed", e);
+    });
   }
 
   return (
@@ -174,15 +233,15 @@ export function OverviewOrchestrator() {
             <Sparkles size={20} />
           </div>
           <div className="flex-1">
-            <div className="label">Agent orchestration</div>
+            <div className="label">{t("Agent orchestration")}</div>
             <h2 className="font-display font-bold text-navy text-lg">
               {running
-                ? "Running agents…"
+                ? t("Running agents…")
                 : hasResults
-                  ? "Analysis ready · re-run anytime"
+                  ? t("Analysis ready · re-run anytime")
                   : blockers.length > 0
-                    ? "Waiting for required inputs"
-                    : "Starting analysis…"}
+                    ? t("Waiting for required inputs")
+                    : t("Starting analysis…")}
             </h2>
             <p className="text-[12px] text-muted mt-0.5">
               {hasResults
@@ -203,10 +262,10 @@ export function OverviewOrchestrator() {
             )}
           >
             {running
-              ? <><Loader2 size={15} className="animate-spin" /> Running…</>
+              ? <><Loader2 size={15} className="animate-spin" /> {t("Running…")}</>
               : hasResults
-                ? <><RefreshCcw size={15} /> Re-run analysis</>
-                : <><PlayCircle size={15} /> Run full analysis</>}
+                ? <><RefreshCcw size={15} /> {t("Re-run analysis")}</>
+                : <><PlayCircle size={15} /> {t("Run full analysis")}</>}
           </button>
         </div>
 
@@ -221,10 +280,10 @@ export function OverviewOrchestrator() {
         )}
 
         <div className="mt-4 grid grid-cols-4 gap-2">
-          <AgentChip k="location" label="Location" icon={MapPin} state={run.location} />
-          <AgentChip k="market"   label="Market"   icon={BarChart3} state={run.market} />
-          <AgentChip k="financials" label="Financials" icon={Wallet} state={run.financials} />
-          <AgentChip k="synthesis"  label="Synthesis"  icon={Sparkles} state={run.synthesis} />
+          <AgentChip k="location"   label={t("Location")}   icon={MapPin}    state={run.location} />
+          <AgentChip k="market"     label={t("Market")}     icon={BarChart3} state={run.market} />
+          <AgentChip k="financials" label={t("Financials")} icon={Wallet}    state={run.financials} />
+          <AgentChip k="synthesis"  label={t("Synthesis")   || "Synthesis"} icon={Sparkles} state={run.synthesis} />
         </div>
       </div>
 
@@ -291,6 +350,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const catchmentRef = useRef<L.LayerGroup | null>(null);
   const siteMarkerRef = useRef<L.Marker | null>(null);
 
   const [query, setQuery] = useState("");
@@ -306,6 +366,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
       attribution: "© OpenStreetMap contributors", maxZoom: 19,
     }).addTo(map);
     overlayRef.current = L.layerGroup().addTo(map);
+    catchmentRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,8 +377,9 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
     const map = mapRef.current;
     if (!map) return;
     if (siteMarkerRef.current) siteMarkerRef.current.remove();
-    L.circle(pin, { radius: 500,  color: "#1B4965", weight: 1, fillOpacity: 0.04, pane: "tilePane" }).addTo(map);
-    L.circle(pin, { radius: 1000, color: "#1B4965", weight: 1, dashArray: "4 6", fillOpacity: 0, pane: "tilePane" }).addTo(map);
+    catchmentRef.current?.clearLayers();
+    L.circle(pin, { radius: 500,  color: "#1B4965", weight: 1, fillOpacity: 0.04, pane: "tilePane" }).addTo(catchmentRef.current!);
+    L.circle(pin, { radius: 1000, color: "#1B4965", weight: 1, dashArray: "4 6", fillOpacity: 0, pane: "tilePane" }).addTo(catchmentRef.current!);
     siteMarkerRef.current = L.marker(pin, {
       icon: L.divIcon({
         className: "site-pin",

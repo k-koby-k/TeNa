@@ -12,13 +12,15 @@ export interface HistoryEntry {
   short_label: "YES" | "MAYBE" | "NO";
   composite_score: number;
   created_at: string;
-  request: AnalyzeRequest;
+  request: AnalyzeRequest & object;
   response: AnalyzeResponse;
+  source: "own" | "marketplace";
+  submitted_by: string;
 }
 
 const _history: HistoryEntry[] = [];
 
-export function record(req: AnalyzeRequest, res: AnalyzeResponse): HistoryEntry {
+export function record(req: AnalyzeRequest & object, res: AnalyzeResponse): HistoryEntry {
   const entry: HistoryEntry = {
     scenario_id: res.scenario_id,
     business_type: res.business_type,
@@ -28,6 +30,8 @@ export function record(req: AnalyzeRequest, res: AnalyzeResponse): HistoryEntry 
     created_at: new Date().toISOString(),
     request: req,
     response: res,
+    source: "own",
+    submitted_by: "Current account",
   };
   _history.unshift(entry);
   // Keep at most 50 entries — the dashboard's history view caps at 20 anyway.
@@ -35,8 +39,9 @@ export function record(req: AnalyzeRequest, res: AnalyzeResponse): HistoryEntry 
   return entry;
 }
 
-export function list(): Omit<HistoryEntry, "request" | "response">[] {
-  return _history.map(({ request: _r, response: _s, ...summary }) => summary);
+export function list(scope: "own" | "all" = "own"): Omit<HistoryEntry, "request" | "response">[] {
+  const rows = scope === "all" ? _history : _history.filter((e) => e.source === "own");
+  return rows.map(({ request: _r, response: _s, ...summary }) => summary);
 }
 
 export function get(scenario_id: string): HistoryEntry | undefined {

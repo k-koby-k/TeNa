@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { api, type VoiceResult } from "../api";
 import { useScenario, renderScenarioContext, type ScenarioInputs } from "../state";
+import { useT } from "../i18n";
 
 type Msg = { role: "user" | "assistant"; text: string; pending?: boolean };
 
@@ -36,6 +37,7 @@ function reply(q: string): string {
 
 export function Assistant() {
   const { result, setInput: setScenarioInput } = useScenario();
+  const t = useT();
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "assistant",
@@ -233,8 +235,8 @@ export function Assistant() {
               }
             }}
             placeholder={
-              recState === "recording" ? "Listening… speak in Uzbek, Russian or English"
-              : "Ask a question, or hit the mic to fill the form"
+              recState === "recording" ? t("Listening… speak in Uzbek, Russian or English")
+              : t("Ask a question, or hit the mic to fill the form")
             }
             rows={2}
             disabled={recState === "recording" || recState === "uploading"}
@@ -243,7 +245,7 @@ export function Assistant() {
           <button
             onClick={recState === "recording" ? stopRecording : startRecording}
             disabled={recState === "uploading"}
-            title={recState === "recording" ? "Stop recording" : "Speak — I'll fill the form"}
+            title={recState === "recording" ? t("Stop recording") : t("Speak — I'll fill the form")}
             className={clsx(
               "w-9 h-9 rounded-lg grid place-items-center transition shrink-0",
               recState === "recording" ? "bg-rose-500 text-white animate-pulse"
@@ -271,12 +273,12 @@ export function Assistant() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between text-[10px] text-muted">
-          <span className="flex items-center gap-1.5"><ShieldCheck size={10} /> Grounded · uz / ru / en voice supported</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck size={10} /> {t("Grounded · uz / ru / en voice supported")}</span>
           <button
             onClick={() => setMsgs(msgs.slice(0, 1))}
             className="flex items-center gap-1 hover:text-navy"
           >
-            <RefreshCw size={10} /> Reset
+            <RefreshCw size={10} /> {t("Reset")}
           </button>
         </div>
       </div>

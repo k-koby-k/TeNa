@@ -119,8 +119,9 @@ const DEFAULT_INPUTS: ScenarioInputs = {
   prior_businesses_count: 1, prior_business_failures: 0,
   legal_entity: "sole_prop", has_employees_planned: 4,
 
-  pin_lat: 41.2756, pin_lng: 69.2036,
-  city: "Tashkent", district: "Chilonzor",
+  // Map opens fresh on Hamid Olimjon; user picks the actual spot themselves.
+  pin_lat: null, pin_lng: null,
+  city: "Tashkent", district: "",
   site_size_sqm: 75, monthly_rent_uzs: 14_000_000,
   operating_hours: "long", site_type: "street_front", parking: "limited",
   lease_term_months: 24, rent_deposit_months: 2,
@@ -402,7 +403,7 @@ interface Ctx {
   loadDemo: () => void;
   missing: string[];
   completion: CompletionState;
-  hydrate: (req: AnalyzeRequest, res: AnalyzeResponse) => void;
+  hydrate: (req: AnalyzeRequest & Partial<Record<string, unknown>>, res: AnalyzeResponse) => void;
   // Agent-specific outputs needed by the Overview view (map overlay, summary):
   locationAgent: LocationAgentResult | null;
   setLocationAgent: (r: LocationAgentResult | null) => void;
@@ -449,17 +450,21 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     locationAgent, setLocationAgent,
     synthesis, setSynthesis,
     hydrate: (req, res) => {
-      setInputs((s) => ({
-        ...s,
-        business_type: req.business_type,
-        district: req.district,
-        city: req.city ?? s.city,
-        format: req.format ?? s.format,
-        budget_uzs: req.budget_uzs,
-        loan_uzs: req.loan_uzs ?? 0,
-        monthly_rent_uzs: req.monthly_rent_uzs ?? 0,
-        notes: req.notes ?? "",
-      }));
+      const restored = { ...EMPTY_INPUTS };
+      for (const key of Object.keys(EMPTY_INPUTS) as Array<keyof ScenarioInputs>) {
+        if (Object.prototype.hasOwnProperty.call(req, key)) {
+          restored[key] = req[key] as never;
+        }
+      }
+      restored.business_type = req.business_type;
+      restored.district = req.district;
+      restored.city = req.city ?? restored.city;
+      restored.format = req.format ?? restored.format;
+      restored.budget_uzs = req.budget_uzs;
+      restored.loan_uzs = req.loan_uzs ?? restored.loan_uzs;
+      restored.monthly_rent_uzs = req.monthly_rent_uzs ?? restored.monthly_rent_uzs;
+      restored.notes = req.notes ?? restored.notes;
+      setInputs(restored);
       setResult(res);
     },
     missing: missingProfile(inputs),

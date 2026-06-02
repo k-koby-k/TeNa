@@ -84,10 +84,22 @@ const SCHEMA = {
 } as const;
 
 export async function analyzeLocation(req: LocationAgentRequest): Promise<LocationAgentResult> {
+  // Each external lookup degrades independently — Overpass being down must
+  // not kill the whole agent. Failed lookups fall back to empty arrays and
+  // Gemini scores the spot from whatever data did come back.
   const [competitors, anchors, geo] = await Promise.all([
-    fetchCompetitors(req.lat, req.lng, req.business_type, 1000),
-    fetchAnchors(req.lat, req.lng, 800),
-    reverseGeocode(req.lat, req.lng),
+    fetchCompetitors(req.lat, req.lng, req.business_type, 1000).catch((e) => {
+      console.warn("[location] competitors lookup failed:", String(e).slice(0, 120));
+      return [] as POI[];
+    }),
+    fetchAnchors(req.lat, req.lng, 800).catch((e) => {
+      console.warn("[location] anchors lookup failed:", String(e).slice(0, 120));
+      return [] as Anchor[];
+    }),
+    reverseGeocode(req.lat, req.lng).catch((e) => {
+      console.warn("[location] reverse geocode failed:", String(e).slice(0, 120));
+      return { district: null, neighborhood: null, road: null, display: "Tashkent" };
+    }),
   ]);
 
   const within500 = competitors.filter((c) => c.distance_m <= 500);

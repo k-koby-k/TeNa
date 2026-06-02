@@ -12,6 +12,7 @@ import type { ViewKey } from "./Sidebar";
 import { useScenario, isProfileComplete, type ScenarioInputs } from "../state";
 import { WizardSteps, WizardFooter } from "./Wizard";
 import { api, type ExtractedProfile } from "../api";
+import { useT } from "../i18n";
 
 const TYPES = [
   "Coffee shop", "Restaurant", "Bakery", "Pharmacy", "Beauty salon",
@@ -20,6 +21,7 @@ const TYPES = [
 
 export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void }) {
   const { inputs, setInput } = useScenario();
+  const t = useT();
   const complete = isProfileComplete(inputs);
 
   return (
@@ -35,15 +37,15 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             <ClipboardList size={20} />
           </div>
           <div className="flex-1">
-            <div className="label">Step 1 of 4 · Business profile</div>
-            <h1 className="font-display text-xl text-navy font-bold">Tell the agents about the business</h1>
+            <div className="label">{t("Step 1 of 4 · Business profile")}</div>
+            <h1 className="font-display text-xl text-navy font-bold">{t("Tell the agents about the business")}</h1>
             <p className="text-sm text-muted mt-0.5">
               Identity and concept only. The Location agent picks the district from your map pin.
               The clearer the description, the sharper the Market agent's TAM/SAM/SOM.
             </p>
           </div>
           <span className={clsx("chip", complete ? "bg-emerald/15 text-emerald" : "bg-amber/15 text-amber")}>
-            {complete ? "Profile complete" : "Profile incomplete"}
+            {complete ? t("Profile complete") : t("Profile incomplete")}
           </span>
         </div>
       </div>
@@ -51,7 +53,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
       <div className="grid grid-cols-2 gap-5">
         {/* Left card: identity */}
         <div className="card p-5 space-y-4">
-          <Field label="Business name" req hint="how it'll show up on the dashboard">
+          <Field label={t("Business name")} req hint="how it'll show up on the dashboard">
             <input
               autoFocus
               className="input"
@@ -61,7 +63,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             />
           </Field>
 
-          <Field label="Business type" req>
+          <Field label={t("Business type")} req>
             <select
               className="input"
               value={inputs.business_type}
@@ -72,7 +74,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             </select>
           </Field>
 
-          <Field label="Format" hint="positioning across the category">
+          <Field label={t("Format")} hint="positioning across the category">
             <Seg
               options={["Kiosk", "Standard", "Premium"]}
               value={cap(inputs.format)}
@@ -80,7 +82,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             />
           </Field>
 
-          <Field label="Stage">
+          <Field label={t("Stage")}>
             <Seg
               options={["Idea", "Pilot", "Scale"]}
               value={cap(inputs.stage || "")}
@@ -91,7 +93,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
 
         {/* Right card: concept */}
         <div className="card p-5 flex flex-col gap-4">
-          <Field label="Concept description" req
+          <Field label={t("Concept description")} req
             hint="1–4 sentences — niche, customer, what makes it different">
             <textarea
               className="input min-h-[160px] text-[13px] leading-relaxed"
@@ -101,22 +103,22 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             />
           </Field>
 
-          <Field label="Target audience">
+          <Field label={t("Target audience")}>
             <select
               className="input"
               value={inputs.target_audience}
               onChange={(e) => setInput("target_audience", e.target.value as any)}
             >
-              <option value="">Pick the primary audience…</option>
-              <option value="office">Office workers / commuters</option>
-              <option value="residents">Local residents</option>
-              <option value="students">Students</option>
-              <option value="tourists">Tourists</option>
-              <option value="mixed">Mixed</option>
+              <option value="">{t("Select…")}</option>
+              <option value="office">{t("Office workers / commuters")}</option>
+              <option value="residents">{t("Local residents")}</option>
+              <option value="students">{t("Students")}</option>
+              <option value="tourists">{t("Tourists")}</option>
+              <option value="mixed">{t("Mixed")}</option>
             </select>
           </Field>
 
-          <Field label="Owner experience" hint="materially shifts credit risk">
+          <Field label={t("Owner experience")} hint="materially shifts credit risk">
             <Seg
               options={["None", "Some", "Established"]}
               value={cap(inputs.owner_experience || "")}
@@ -129,7 +131,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
       {/* Next-step hand-offs */}
       <div className="card p-5">
         <div className="flex items-center justify-between">
-          <div className="label">Next steps</div>
+          <div className="label">{t("Next steps")}</div>
           {!complete && (
             <span className="text-[11px] text-muted">Fill the required fields to unlock the agents.</span>
           )}
@@ -157,8 +159,8 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
         active="Profile"
         onChange={onContinue}
         currentDone={complete}
-        doneHint="Fill business name, type, and concept description to continue."
-        nextHint="Profile complete. Pin the site on a real map next."
+        doneHint={t("Fill business name, type, and concept description to continue.") || "Fill business name, type, and concept description to continue."}
+        nextHint={t("Profile complete. Pin the site on a real map next.") || "Profile complete. Pin the site on a real map next."}
       />
     </div>
   );

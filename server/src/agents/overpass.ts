@@ -4,7 +4,14 @@
 // metro stations, malls, schools, etc. The data is real OpenStreetMap
 // content (good coverage in Tashkent).
 
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+// Multiple public Overpass mirrors. The main one (overpass-api.de) is often
+// overloaded and returns 504 / times out — we fall through to the others.
+const OVERPASS_MIRRORS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
 
 export interface POI {
   id: number;
@@ -26,18 +33,30 @@ const haversine = (la1: number, lo1: number, la2: number, lo2: number) => {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
+// Try each mirror in turn. A mirror that 504s, times out, or errors is
+// skipped; the first one that returns usable JSON wins. Throws only if
+// every mirror fails — callers are expected to degrade gracefully.
 async function overpass(query: string): Promise<any> {
-  const r = await fetch(OVERPASS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "ai-business-platform/0.1 (sqb-ideathon)",
-    },
-    body: "data=" + encodeURIComponent(query),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!r.ok) throw new Error(`Overpass ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  return r.json();
+  let lastErr: unknown;
+  for (const url of OVERPASS_MIRRORS) {
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "ai-business-platform/0.1 (sqb-ideathon)",
+        },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!r.ok) throw new Error(`Overpass ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      lastErr = e;
+      // try the next mirror
+    }
+  }
+  throw new Error(`All Overpass mirrors failed: ${String(lastErr).slice(0, 120)}`);
 }
 
 // Map a frontend business type to OSM tag selectors that represent direct

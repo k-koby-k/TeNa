@@ -1,7 +1,7 @@
 // Holds two side-screen views accessible from the sidebar:
 //   - Explainability: the agent / model registry, populated live from
 //     whichever agents have run.
-//   - History:        every analysis recorded on the backend.
+//   - History:        analyses run by the current account.
 // Both feed off the live state — nothing hardcoded.
 
 import { useEffect, useState } from "react";
@@ -126,10 +126,11 @@ function HistoryView() {
           <History size={20} />
         </div>
         <div className="flex-1">
-          <div className="label">Audit · activity</div>
-          <h1 className="font-display text-xl text-navy font-bold">Recent activity</h1>
+          <div className="label">My workspace · analysis history</div>
+          <h1 className="font-display text-xl text-navy font-bold">My Analyses</h1>
           <p className="text-sm text-muted mt-0.5">
-            Every scenario you've run on this engine. Click to restore one to the dashboard.
+            Scenarios analyzed by this account. The bank Deal Pipeline includes these plus
+            businesses sourced from other founders and partners.
           </p>
         </div>
         <div className="relative">
@@ -145,7 +146,7 @@ function HistoryView() {
 
       <div className="mt-5 flex items-center justify-between">
         <span className="chip bg-navy/5 text-navy">
-          <FileText size={12} /> Analyses · {items?.length ?? 0}
+          <FileText size={12} /> My analyses · {items?.length ?? 0}
         </span>
         <div className="text-[11px] text-muted">Sorted by most recent</div>
       </div>

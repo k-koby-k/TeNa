@@ -302,5 +302,7 @@ export function seedHistory(record: (req: AnalyzeRequest, res: AnalyzeResponse) 
     const entry = record(req, res);
     // Override the timestamp so the banker view shows realistic recency.
     entry.created_at = _at;
+    entry.source = "marketplace";
+    entry.submitted_by = "TeNa marketplace";
   }
 }

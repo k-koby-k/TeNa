@@ -436,7 +436,7 @@ export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onCha
           <Sparkles size={12} className="text-petrol" />
           <span>AI Decision Cockpit</span>
           <span>›</span>
-          <span>{view}</span>
+          <span>{view === "Queue" ? "Deal Pipeline" : view}</span>
           <span className="ml-auto flex items-center gap-2">
             <span className="chip bg-navy/5 text-navy"><TrendingUp size={10} /> 6 flagship models active</span>
             <CompletionChip />
@@ -495,7 +495,8 @@ function LockedScreen({ title, body, cta, onClick }: { title: string; body: stri
 }
 
 function OverviewDashboard({ onChange }: { onChange: (v: ViewKey) => void }) {
-  const { completion } = useScenario();
+  const { completion, result } = useScenario();
+  const demandReady = !!result && result.demand.score > 0 && result.demand.forecast_index.length > 0;
   return (
     <>
       {/* Always show the orchestrator at the top of Overview */}
@@ -509,9 +510,9 @@ function OverviewDashboard({ onChange }: { onChange: (v: ViewKey) => void }) {
         {completion.market
           ? <MarketSizeCard />
           : <FillToSeeCard target="Market" onChange={onChange} blurb="TAM / SAM / SOM and saturation index" />}
-        {completion.financials
+        {demandReady
           ? <DemandCard />
-          : <FillToSeeCard className="col-span-2" target="Financials" onChange={onChange} blurb="Demand forecast, breakeven, ROI and margins" />}
+          : <FillToSeeCard className="col-span-2" target="Overview" onChange={onChange} blurb="the demand forecast once the Demand agent is available" />}
       </section>
 
       <FactorsCard />
