@@ -13,6 +13,10 @@ export interface AnalyzeRequest {
   monthly_rent_uzs?: number;
   format?: "kiosk" | "standard" | "premium";
   notes?: string;
+  // Contact for the business owner — replaces login on the client side.
+  // A banker can call this number before/while reviewing the analysis.
+  contact_name?: string;
+  contact_phone?: string;
 }
 
 export interface MarketBlock {

@@ -269,6 +269,19 @@ const DICT: Record<string, { uz: string }> = {
   "thinking…":                            { uz: "o'ylayapti..." },
   "transcribing…":                        { uz: "matnga aylantirilmoqda..." },
 
+  // === Contact gate (replaces login) ===
+  "Almost there — how do we reach you?":  { uz: "Deyarli tayyor — siz bilan qanday bog'lanamiz?" },
+  "Your analysis is ready. Leave a name and number so a banker can call you about it — no account needed.":
+                                          { uz: "Tahlilingiz tayyor. Bankir siz bilan bog'lana olishi uchun ism va raqam qoldiring — hisob kerak emas." },
+  "Your name":                            { uz: "Ismingiz" },
+  "e.g. Sardor Aliyev":                   { uz: "masalan, Sardor Aliyev" },
+  "Phone number":                         { uz: "Telefon raqami" },
+  "Enter your name and a valid phone number to continue.":
+                                          { uz: "Davom etish uchun ism va to'g'ri telefon raqamini kiriting." },
+  "Show my analysis":                     { uz: "Tahlilimni ko'rsatish" },
+  "We only share your contact with the bank reviewing this deal.":
+                                          { uz: "Kontaktingizni faqat ushbu bitimni ko'rib chiqayotgan bank bilan bo'lishamiz." },
+
   // === Common ===
   "Loading…":                             { uz: "Yuklanmoqda..." },
   "Save & recompute":                     { uz: "Saqlash va qayta hisoblash" },

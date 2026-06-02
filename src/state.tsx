@@ -30,6 +30,9 @@ export interface ScenarioInputs {
   // ============ PROFILE — identity, concept, founder ============
   business_name: string;
   business_type: string;
+  // Owner contact — collected once before results (no login on the client).
+  contact_name: string;
+  contact_phone: string;
   format: "kiosk" | "standard" | "premium";
   stage: Stage;
   description: string;
@@ -112,6 +115,7 @@ export interface ScenarioInputs {
 // Click "+ New analysis" to wipe back to EMPTY_INPUTS.
 const DEFAULT_INPUTS: ScenarioInputs = {
   business_name: "Black Bean Co.", business_type: "Coffee shop",
+  contact_name: "Sardor Aliyev", contact_phone: "+998 90 123 45 67",
   format: "premium", stage: "pilot",
   description: "Premium specialty coffee shop near Chilonzor metro, targeting young professionals with on-site roasting, evening dessert pairings and work-friendly seating.",
   target_audience: "office",
@@ -154,7 +158,8 @@ const DEFAULT_INPUTS: ScenarioInputs = {
 // Blank slate. business_type/district required; the rest are validated
 // after a Profile is filled (see PROFILE_REQUIRED below).
 const EMPTY_INPUTS: ScenarioInputs = {
-  business_name: "", business_type: "", format: "standard",
+  business_name: "", business_type: "", contact_name: "", contact_phone: "",
+  format: "standard",
   stage: "", description: "", target_audience: "",
   owner_experience: "", years_in_industry: 0,
   prior_businesses_count: 0, prior_business_failures: 0,
@@ -207,6 +212,13 @@ export function missingProfile(inputs: ScenarioInputs): string[] {
 
 export function isProfileComplete(inputs: ScenarioInputs): boolean {
   return missingProfile(inputs).length === 0;
+}
+
+/** Owner contact gate — name + a plausible phone must be present before we
+ *  reveal results (and before the deal lands in the banker pipeline). */
+export function isContactComplete(inputs: ScenarioInputs): boolean {
+  const digits = inputs.contact_phone.replace(/\D/g, "");
+  return inputs.contact_name.trim().length > 1 && digits.length >= 9;
 }
 
 /** Which agents have produced data we can show on the Overview. */
@@ -436,6 +448,8 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       monthly_rent_uzs: inputs.monthly_rent_uzs || undefined,
       format: inputs.format,
       notes: inputs.notes || undefined,
+      contact_name: inputs.contact_name || undefined,
+      contact_phone: inputs.contact_phone || undefined,
     }),
     reset: () => {
       setInputs(EMPTY_INPUTS);

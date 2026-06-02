@@ -317,7 +317,8 @@ import { ProfileSetup } from "./ProfileSetup";
 import { OverviewOrchestrator } from "./OverviewOrchestrator";
 import { BorrowerLoanCard } from "./BorrowerLoanCard";
 import { BankerQueue } from "./BankerQueue";
-import { useScenario } from "../state";
+import { ContactGate } from "./ContactGate";
+import { useScenario, isContactComplete } from "../state";
 import { Lock as LockIcon } from "lucide-react";
 
 /* Old empty-state component removed — Overview now always renders the
@@ -421,13 +422,20 @@ function MarketSizeCard() {
 }
 
 export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onChange: (v: ViewKey) => void; mode: Mode }) {
-  const { completion } = useScenario();
+  const { completion, inputs } = useScenario();
 
   // In banker mode the founder-side gating doesn't apply — the banker just
   // wants to browse / open queued applications.
   const needsProfile = mode === "founder"
     && !completion.profile
     && (view === "Location" || view === "Market" || view === "Financials" || view === "Overview");
+
+  // Before a founder sees the Overview we collect their contact (name + phone).
+  // Bankers skip this — they already have the deal in front of them.
+  const needsContact = mode === "founder"
+    && view === "Overview"
+    && completion.profile
+    && !isContactComplete(inputs);
 
   return (
     <main className="flex-1 min-w-0 overflow-y-auto">
@@ -457,6 +465,8 @@ export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onCha
           : view === "Location"   ? <LocationAgent   onChange={onChange} />
           : view === "Market"     ? <MarketAgent     onChange={onChange} />
           : view === "Financials" ? <FinancialsAgent onChange={onChange} />
+          : needsContact
+            ? <ContactGate onContinue={() => onChange("Overview")} />
           : view === "Overview"
             ? <OverviewDashboard onChange={onChange} />
           : <CategoryView view={view} />

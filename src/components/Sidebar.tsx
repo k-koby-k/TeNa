@@ -49,12 +49,15 @@ const relTime = (iso: string) => {
 };
 
 export function Sidebar({
-  active, onChange, mode, onModeChange,
+  active, onChange, mode, onModeChange, allowModeSwitch = false,
 }: {
   active: ViewKey;
   onChange: (v: ViewKey) => void;
   mode: Mode;
   onModeChange: (m: Mode) => void;
+  /** Dev/demo only: show the founder↔banker switcher in the account card.
+   *  In production the role is fixed by the subdomain. */
+  allowModeSwitch?: boolean;
 }) {
   const { reset, result, hydrate, completion } = useScenario();
   const t = useT();
@@ -220,7 +223,7 @@ export function Sidebar({
       </div>
 
       <div className="mt-auto p-3 relative">
-        {accountOpen && (
+        {allowModeSwitch && accountOpen && (
           <div className="absolute left-3 right-3 bottom-[76px] card p-2 z-20 shadow-soft">
             <button
               onClick={() => {
@@ -263,8 +266,11 @@ export function Sidebar({
           </div>
         )}
         <button
-          onClick={() => setAccountOpen((v) => !v)}
-          className="card p-3 flex items-center gap-3 w-full text-left hover:border-petrol transition"
+          onClick={() => { if (allowModeSwitch) setAccountOpen((v) => !v); }}
+          className={clsx(
+            "card p-3 flex items-center gap-3 w-full text-left transition",
+            allowModeSwitch ? "hover:border-petrol cursor-pointer" : "cursor-default",
+          )}
         >
           <div className={clsx(
             "w-9 h-9 rounded-full text-white grid place-items-center text-sm font-semibold",
@@ -280,7 +286,9 @@ export function Sidebar({
               {mode === "banker" ? t("SME Credit Analyst · SQB") : t("Demo session")}
             </div>
           </div>
-          <ChevronDown size={14} className={clsx("text-muted transition", accountOpen && "rotate-180")} />
+          {allowModeSwitch && (
+            <ChevronDown size={14} className={clsx("text-muted transition", accountOpen && "rotate-180")} />
+          )}
         </button>
       </div>
     </aside>

@@ -16,6 +16,10 @@ export interface HistoryEntry {
   response: AnalyzeResponse;
   source: "own" | "marketplace";
   submitted_by: string;
+  // Pulled up from the request so the banker queue can show + call the owner
+  // without rehydrating the full scenario.
+  contact_name?: string;
+  contact_phone?: string;
 }
 
 const _history: HistoryEntry[] = [];
@@ -32,6 +36,8 @@ export function record(req: AnalyzeRequest & object, res: AnalyzeResponse): Hist
     response: res,
     source: "own",
     submitted_by: "Current account",
+    contact_name: (req as AnalyzeRequest).contact_name,
+    contact_phone: (req as AnalyzeRequest).contact_phone,
   };
   _history.unshift(entry);
   // Keep at most 50 entries — the dashboard's history view caps at 20 anyway.

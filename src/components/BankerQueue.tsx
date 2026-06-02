@@ -395,7 +395,14 @@ function QueueRow({
 
       <div className="min-w-0">
         <div className="font-display font-semibold text-navy truncate text-[13px]">{item.business_type}</div>
-        <div className="text-[11px] text-muted truncate font-mono">{item.scenario_id}</div>
+        {item.contact_name ? (
+          <div className="text-[11px] text-navy/70 truncate flex items-center gap-1">
+            <span className="font-medium">{item.contact_name}</span>
+            {item.contact_phone && <span className="text-muted font-mono">· {item.contact_phone}</span>}
+          </div>
+        ) : (
+          <div className="text-[11px] text-muted truncate font-mono">{item.scenario_id}</div>
+        )}
       </div>
 
       <div className="text-[12px] text-navy truncate">{item.location}</div>
@@ -424,9 +431,17 @@ function QueueRow({
 
       <div className="flex items-center justify-end gap-1.5">
         <span
-          onClick={(e) => { e.stopPropagation(); }}
-          className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-petrol hover:bg-petrol/10 rounded"
-          title="Assign to me"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (item.contact_phone) {
+              window.location.href = `tel:${item.contact_phone.replace(/[^\d+]/g, "")}`;
+            }
+          }}
+          className={clsx(
+            "inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded",
+            item.contact_phone ? "text-petrol hover:bg-petrol/10" : "text-muted opacity-50",
+          )}
+          title={item.contact_phone ? `Call ${item.contact_name ?? "owner"} · ${item.contact_phone}` : "No contact number"}
         >
           <Phone size={11} /> Call
         </span>

@@ -19,6 +19,9 @@ export interface AnalyzeRequest {
   monthly_rent_uzs?: number;
   format?: "kiosk" | "standard" | "premium";
   notes?: string;
+  // Business-owner contact — replaces login on the client side.
+  contact_name?: string;
+  contact_phone?: string;
 }
 
 export type RiskLevel = "Low" | "Medium" | "High" | "Critical";
@@ -72,6 +75,8 @@ export interface HistoryItem {
   created_at: string;
   source?: "own" | "marketplace";
   submitted_by?: string;
+  contact_name?: string;
+  contact_phone?: string;
 }
 export interface HistoryEntry {
   scenario_id: string;

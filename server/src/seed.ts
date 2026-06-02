@@ -37,11 +37,14 @@ interface Seed {
   next_actions: string[];
   bank_product: string;
   hours_ago: number; // when it was submitted, for the queue ordering
+  owner: string;     // business owner — banker calls this person
+  phone: string;     // contact number captured at analysis time
 }
 
 const SEEDS: Seed[] = [
   {
     business_name: "Black Bean Co.",
+    owner: "Sardor Aliyev", phone: "+998 90 123 45 67",
     business_type: "Coffee shop",
     district: "Chilonzor",
     format: "premium",
@@ -58,6 +61,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Yashil Pharma",
+    owner: "Dilnoza Yusupova", phone: "+998 91 234 56 78",
     business_type: "Pharmacy",
     district: "Yunusobod",
     format: "standard",
@@ -74,6 +78,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Toshkent Dental",
+    owner: "Jasur Rahimov", phone: "+998 93 345 67 89",
     business_type: "Dental clinic",
     district: "Mirzo Ulug'bek",
     format: "premium",
@@ -90,6 +95,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Sergeli Fitness Hub",
+    owner: "Bekzod Tursunov", phone: "+998 94 456 78 90",
     business_type: "Gym",
     district: "Sergeli",
     format: "standard",
@@ -106,6 +112,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Bibi-Khanym Bakery",
+    owner: "Madina Qodirova", phone: "+998 97 567 89 01",
     business_type: "Bakery",
     district: "Yashnobod",
     format: "kiosk",
@@ -122,6 +129,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Style & Co. Salon",
+    owner: "Nigora Ismoilova", phone: "+998 90 678 90 12",
     business_type: "Beauty salon",
     district: "Mirzo Ulug'bek",
     format: "premium",
@@ -138,6 +146,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Tashkent Petfood",
+    owner: "Akmal Saidov", phone: "+998 99 789 01 23",
     business_type: "Pet shop",
     district: "Shaykhantakhur",
     format: "standard",
@@ -154,6 +163,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Mini-Mart Express",
+    owner: "Otabek Nazarov", phone: "+998 88 890 12 34",
     business_type: "Mini-market",
     district: "Chilonzor",
     format: "standard",
@@ -170,6 +180,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Knigozavr Books",
+    owner: "Kamola Abdullayeva", phone: "+998 91 901 23 45",
     business_type: "Bookstore",
     district: "Yashnobod",
     format: "standard",
@@ -186,6 +197,7 @@ const SEEDS: Seed[] = [
   },
   {
     business_name: "Aqua Restaurant",
+    owner: "Rustam Karimov", phone: "+998 93 012 34 56",
     business_type: "Restaurant",
     district: "Yunusobod",
     format: "premium",
@@ -225,6 +237,8 @@ function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
     monthly_rent_uzs: s.rent_m * 1_000_000,
     format: s.format,
     notes: s.description,
+    contact_name: s.owner,
+    contact_phone: s.phone,
   };
 
   const res: AnalyzeResponse = {
