@@ -1,6 +1,7 @@
-# Cloudflare Pages config. The project name decides the URL: `tena` → tena.pages.dev
-# (falls back to e.g. tena-app.pages.dev if "tena" is already taken globally).
-name = "tena"
+# Cloudflare Pages config. The project name decides the URL.
+# Using the project your earlier deploy created (since bare "tena" was taken).
+# → https://tena-5e7.pages.dev . Change this if you want a different name.
+name = "tena-5e7"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]

@@ -32,8 +32,10 @@ function shimEnv(env: Env) {
   }
 }
 
-// Rate limits: per IP and per cookie, whichever trips first.
-const AI_LIMIT = 15;          // requests…
+// Rate limits: per IP and per cookie, whichever trips first. With a real Gemini
+// budget the cap is just a runaway-bot backstop, not a cost guard — so it's set
+// generously. 60 AI calls / 10 min ≈ 15 full analyses per person per 10 min.
+const AI_LIMIT = 60;          // requests…
 const AI_WINDOW_SEC = 600;    // …per 10 minutes
 
 let seeded = false;
