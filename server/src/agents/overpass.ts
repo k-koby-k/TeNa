@@ -4,13 +4,19 @@
 // metro stations, malls, schools, etc. The data is real OpenStreetMap
 // content (good coverage in Tashkent).
 
-// Multiple public Overpass mirrors. The main one (overpass-api.de) is often
-// overloaded and returns 504 / times out — we fall through to the others.
+// Public Overpass mirrors. They're individually slow/flaky (the main one
+// regularly takes 10s+, others time out or 403), so we don't try them one at a
+// time — we RACE them all in parallel and take the first that answers.
+//
+// IMPORTANT: every mirror here must be a FULL-PLANET instance. A regional one
+// (e.g. overpass.osm.ch — Switzerland only) returns HTTP 200 with 0 elements
+// for Tashkent and, being fast, would win the race and show "no competitors".
+// (maps.mail.ru dropped: it 403s our requests.)
 const OVERPASS_MIRRORS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
-  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass.openstreetmap.fr/api/interpreter",
 ];
 
 export interface POI {
@@ -33,30 +39,44 @@ const haversine = (la1: number, lo1: number, la2: number, lo2: number) => {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-// Try each mirror in turn. A mirror that 504s, times out, or errors is
-// skipped; the first one that returns usable JSON wins. Throws only if
-// every mirror fails — callers are expected to degrade gracefully.
+// Short-lived cache so a re-run / re-pin to the same spot is instant and never
+// re-hits the flaky mirrors. Keyed by the exact query string.
+const _cache = new Map<string, { at: number; data: any }>();
+const CACHE_TTL_MS = 15 * 60_000;
+
+async function fetchMirror(url: string, query: string): Promise<any> {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "ai-business-platform/0.1 (sqb-ideathon)",
+    },
+    body: "data=" + encodeURIComponent(query),
+    signal: AbortSignal.timeout(16_000),
+  });
+  if (!r.ok) throw new Error(`Overpass ${r.status} @ ${new URL(url).hostname}`);
+  const j = await r.json();
+  if (!j || !Array.isArray((j as any).elements)) throw new Error("Overpass: malformed payload");
+  return j;
+}
+
+// Race every mirror at once; the first one to return valid JSON wins. Worst
+// case (all down) rejects after the slowest timeout — but a single healthy
+// mirror means we resolve as soon as IT answers, not after the others fail.
+// Throws only if every mirror fails; callers degrade gracefully.
 async function overpass(query: string): Promise<any> {
-  let lastErr: unknown;
-  for (const url of OVERPASS_MIRRORS) {
-    try {
-      const r = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "ai-business-platform/0.1 (sqb-ideathon)",
-        },
-        body: "data=" + encodeURIComponent(query),
-        signal: AbortSignal.timeout(12_000),
-      });
-      if (!r.ok) throw new Error(`Overpass ${r.status}`);
-      return await r.json();
-    } catch (e) {
-      lastErr = e;
-      // try the next mirror
-    }
+  const cached = _cache.get(query);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.data;
+
+  let data: any;
+  try {
+    data = await Promise.any(OVERPASS_MIRRORS.map((url) => fetchMirror(url, query)));
+  } catch (e) {
+    // Promise.any throws an AggregateError when all mirrors fail.
+    throw new Error("All Overpass mirrors failed");
   }
-  throw new Error(`All Overpass mirrors failed: ${String(lastErr).slice(0, 120)}`);
+  _cache.set(query, { at: Date.now(), data });
+  return data;
 }
 
 // Map a frontend business type to OSM tag selectors that represent direct

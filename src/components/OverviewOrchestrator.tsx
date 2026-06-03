@@ -372,7 +372,7 @@ function AgentChip({ k, label, icon: Icon, state }: { k: AgentKey; label: string
  *  pin exists; competitor + anchor markers layer on after the Location agent
  *  finishes. The user can re-pin from here too (same Nominatim search). */
 function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, number] }) {
-  const { setInput } = useScenario();
+  const { setInput, setLocationAgent } = useScenario();
   const t = useT();
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -459,7 +459,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
         setHits(r.items);
         if (r.items.length > 0) setSearchOpen(true);
       } catch { /* ignore */ }
-    }, 200);
+    }, 450); // Nominatim policy is ≤1 req/sec — debounce generously.
     return () => clearTimeout(t);
   }, [query]);
 
@@ -467,6 +467,10 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
     setInput("pin_lat", lat);
     setInput("pin_lng", lng);
     mapRef.current?.setView([lat, lng], 16);
+    // Drop the previous location's competitors/anchors so the map doesn't show
+    // markers from the OLD spot next to the NEW pin. The panel then prompts a
+    // re-run, which fetches fresh data for the new coordinates.
+    setLocationAgent(null);
   }
 
   return (

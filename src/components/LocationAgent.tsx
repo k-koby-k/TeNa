@@ -82,7 +82,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
         // focus during the in-flight request.
         if (r.items.length > 0) setSearchOpen(true);
       } catch { /* ignore */ }
-    }, 200);
+    }, 450); // Nominatim policy is ≤1 req/sec — debounce generously.
     return () => clearTimeout(t);
   }, [query]);
 
