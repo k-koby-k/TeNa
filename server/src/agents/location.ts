@@ -85,15 +85,22 @@ const SCHEMA = {
 
 export async function analyzeLocation(req: LocationAgentRequest): Promise<LocationAgentResult> {
   // Each external lookup degrades independently — Overpass being down must
-  // not kill the whole agent. Failed lookups fall back to empty arrays and
-  // Gemini scores the spot from whatever data did come back.
+  // not kill the whole agent. But we must distinguish "the lookup FAILED so we
+  // don't know" from "the lookup succeeded and the area is genuinely empty".
+  // Collapsing both to [] let a transient Overpass outage read as "zero
+  // competitors → clean slate → score 90", when the same pin scores ~55 once
+  // the competitor data comes back. We track the failure explicitly instead.
+  let competitorsFailed = false;
+  let anchorsFailed = false;
   const [competitors, anchors, geo] = await Promise.all([
     fetchCompetitors(req.lat, req.lng, req.business_type, 1000).catch((e) => {
       console.warn("[location] competitors lookup failed:", String(e).slice(0, 120));
+      competitorsFailed = true;
       return [] as POI[];
     }),
     fetchAnchors(req.lat, req.lng, 800).catch((e) => {
       console.warn("[location] anchors lookup failed:", String(e).slice(0, 120));
+      anchorsFailed = true;
       return [] as Anchor[];
     }),
     reverseGeocode(req.lat, req.lng).catch((e) => {
@@ -103,7 +110,10 @@ export async function analyzeLocation(req: LocationAgentRequest): Promise<Locati
   ]);
 
   const within500 = competitors.filter((c) => c.distance_m <= 500);
-  const sparse = competitors.length === 0 && anchors.length === 0;
+  // "Sparse" = a successful lookup that found nothing mapped. If the lookup
+  // itself failed, that's not sparse — it's unknown, handled separately below.
+  const sparse = !competitorsFailed && !anchorsFailed
+    && competitors.length === 0 && anchors.length === 0;
   const anchorSummary = summariseAnchors(anchors);
 
   const businessLine = req.business_name
@@ -125,8 +135,10 @@ ${descLine}
 ${siteLine}
 
 Real OSM data within 1 km:
-- ${competitors.length} direct competitors total, ${within500.length} within 500 m.
-${competitors.slice(0, 8).map((c) => `  · ${c.name ?? "(unnamed)"} — ${c.kind} — ${c.distance_m}m`).join("\n")}
+${competitorsFailed
+  ? `- Competitor data UNAVAILABLE for this run (the OpenStreetMap lookup failed). Do NOT treat this as "no competition" — it is unknown. Score conservatively and say so.`
+  : `- ${competitors.length} direct competitors total, ${within500.length} within 500 m.
+${competitors.slice(0, 8).map((c) => `  · ${c.name ?? "(unnamed)"} — ${c.kind} — ${c.distance_m}m`).join("\n")}`}
 
 Anchors within 800 m (counts · nearest distance):
 ${Object.entries(anchorSummary).map(([k, v]) => `- ${k}: ${v.count} · ${v.nearest_m ?? "—"}m`).join("\n")}
@@ -146,18 +158,37 @@ Use realistic Tashkent magnitudes. If OSM data is sparse, return mid-band (50-65
     config: {
       responseMimeType: "application/json",
       responseSchema: SCHEMA as any,
-      temperature: 0.4,
+      // temperature 0 → re-scoring the same pin returns the same number.
+      // Higher temps made the location score drift on every re-run.
+      temperature: 0,
     },
   });
 
   const data = JSON.parse(resp.text ?? "{}");
+
+  // Deterministic guard rails over whatever the model returned. The model is
+  // told to score conservatively when data is missing/sparse, but we enforce it
+  // here too so a transient Overpass outage can NEVER surface as a high score
+  // built on competitor data we never actually had.
+  let score = Math.round(data.score);
+  const reasons = Array.isArray(data.rationale) ? [...data.rationale] : [];
+  if (competitorsFailed) {
+    // We couldn't see competition — cap so it can't read as a clean slate.
+    if (score > 60) score = 60;
+    reasons.unshift("Competitor data was unavailable this run (OSM lookup failed) — score capped pending a re-run.");
+  } else if (sparse) {
+    // Genuinely empty mapped area — hold to a conservative mid-band.
+    score = Math.max(45, Math.min(score, 62));
+    reasons.unshift("OpenStreetMap coverage is thin around this pin — treat the score as a conservative estimate.");
+  }
+  score = Math.max(0, Math.min(100, score));
 
   return {
     foot_traffic_per_day: Math.round(data.foot_traffic_per_day),
     competitors_within_500m: within500.length,
     walkability: Math.round(data.walkability),
     visibility: Math.round(data.visibility),
-    score: Math.round(data.score),
+    score,
     competitors_within_1km: competitors.length,
     competitors: competitors.slice(0, 30).map((c: POI) => ({
       name: c.name, kind: c.kind, distance_m: c.distance_m, lat: c.lat, lng: c.lng,
@@ -165,11 +196,13 @@ Use realistic Tashkent magnitudes. If OSM data is sparse, return mid-band (50-65
     anchors: anchors.slice(0, 30).map((a: Anchor) => ({
       name: a.name, type: a.anchor_type, distance_m: a.distance_m, lat: a.lat, lng: a.lng,
     })),
-    rationale: data.rationale ?? [],
+    rationale: reasons,
     district: geo.district,
     neighborhood: geo.neighborhood,
     road: geo.road,
     display_address: geo.display,
-    sparse_data: sparse,
+    // Flag both genuinely-sparse and lookup-failed so the UI shows the
+    // "conservative estimate" banner rather than implying verified data.
+    sparse_data: sparse || competitorsFailed,
   };
 }

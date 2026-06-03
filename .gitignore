@@ -34,3 +34,7 @@ server/.env.local
 *.sln
 *.sw?
 .codex
+
+# Cloudflare local dev
+.dev.vars
+.wrangler/

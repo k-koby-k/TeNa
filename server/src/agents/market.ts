@@ -146,7 +146,7 @@ Return structured analysis. If absolutely critical info is missing, list at most
       systemInstruction: SYSTEM,
       responseMimeType: "application/json",
       responseSchema: SCHEMA as any,
-      temperature: 0.4,
+      temperature: 0,
     },
   });
 

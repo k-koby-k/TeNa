@@ -6,7 +6,7 @@
 // Also renders the read-only map at the top once the Location agent has
 // produced data — competitors and anchors plotted live.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -14,7 +14,7 @@ import {
   PlayCircle, RefreshCcw, Search, X,
 } from "lucide-react";
 import clsx from "clsx";
-import { api, type LocationAgentResult, type PlaceHit, type MarketAgentResult, type FinancialsAgentResult, type AnalyzeResponse } from "../api";
+import { api, type LocationAgentResult, type PlaceHit, type MarketAgentResult, type FinancialsAgentResult, type AnalyzeResponse, type SynthesizeResult } from "../api";
 import { useScenario, type ScenarioInputs } from "../state";
 import { useT } from "../i18n";
 
@@ -45,6 +45,9 @@ async function withRetry<T>(fn: () => Promise<T>, label = "agent"): Promise<T> {
     } catch (e: any) {
       lastErr = e;
       const msg = String(e?.message ?? e);
+      // Our own per-user/IP limiter (HTTP 429 with `rate_limited`) won't clear
+      // within the retry window — fail fast so the user sees the real reason.
+      if (/rate_limited/.test(msg)) throw e;
       const is429 = msg.includes("429") || /quota|rate.?limit|exceeded/i.test(msg);
       if (!is429 || attempt === delays.length) throw e;
       console.warn(`[${label}] rate-limited, retrying in ${delays[attempt] / 1000}s…`);
@@ -54,7 +57,7 @@ async function withRetry<T>(fn: () => Promise<T>, label = "agent"): Promise<T> {
   throw lastErr;
 }
 
-export function OverviewOrchestrator() {
+export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: ReactNode } = {}) {
   const { inputs, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis } = useScenario();
   const t = useT();
   const [run, setRun] = useState<RunState>(initialState);
@@ -77,8 +80,15 @@ export function OverviewOrchestrator() {
   // required inputs but no result yet. Avoids the awkward "no values" screen.
   // If the user explicitly clears the scenario (+ New analysis), the next
   // visit to Overview will auto-run again — that's intentional.
+  //
+  // The ref guards against React StrictMode (dev) mounting the effect twice,
+  // which otherwise fired two parallel analyses whose scores then fought each
+  // other — the source of the "score keeps changing" flicker.
+  const autoRan = useRef(false);
   useEffect(() => {
+    if (autoRan.current) return;
     if (!hasResults && !running && blockers.length === 0) {
+      autoRan.current = true;
       runAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,6 +175,7 @@ export function OverviewOrchestrator() {
 
     // Synthesis — only meaningful if all three upstream agents succeeded.
     if (locR.status === "fulfilled" && mktR.status === "fulfilled" && finR.status === "fulfilled") {
+      const loc = locR.value;
       try {
         const synth = await withRetry(() => api.agentSynthesize({
           business_name: inputs.business_name,
@@ -196,19 +207,27 @@ export function OverviewOrchestrator() {
           credit: { ...nextResult.credit, product: synth.bank_product },
         };
         setResult(finalResult);
-        saveToHistory(finalResult);
+        // Persist the live location-agent map data + the synthesis so a banker
+        // reopening this deal sees the same competitors, anchors and verdict.
+        saveToHistory(finalResult, { location: loc, synthesis: synth });
         setRun((s) => ({ ...s, synthesis: { status: "done" } }));
       } catch (e: any) {
-        saveToHistory(nextResult);
+        saveToHistory(nextResult, { location: loc });
         setRun((s) => ({ ...s, synthesis: { status: "error", error: String(e?.message ?? e).slice(0, 120) } }));
       }
     } else {
-      saveToHistory(nextResult);
+      saveToHistory(nextResult, { location: locR.status === "fulfilled" ? locR.value : null });
       setRun((s) => ({ ...s, synthesis: { status: "error", error: "Skipped — one or more upstream agents failed" } }));
     }
   }
 
-  function saveToHistory(response: AnalyzeResponse) {
+  // The live agent outputs aren't in component state yet when we save (setState
+  // is async), so the caller passes them in explicitly. They ride along inside
+  // the saved request object and are restored verbatim by hydrate().
+  function saveToHistory(
+    response: AnalyzeResponse,
+    agents?: { location?: LocationAgentResult | null; synthesis?: SynthesizeResult | null },
+  ) {
     const request = {
       ...inputs,
       business_type: inputs.business_type,
@@ -219,6 +238,9 @@ export function OverviewOrchestrator() {
       monthly_rent_uzs: inputs.monthly_rent_uzs || undefined,
       format: inputs.format,
       notes: inputs.notes || undefined,
+      // Map intelligence + synthesis, so the scenario rehydrates fully.
+      location_agent: agents?.location ?? locationAgent ?? undefined,
+      synthesis: agents?.synthesis ?? undefined,
     };
     api.saveHistory(request, response).catch((e) => {
       console.warn("history save failed", e);
@@ -246,7 +268,7 @@ export function OverviewOrchestrator() {
             <p className="text-[12px] text-muted mt-0.5">
               {hasResults
                 ? "Agents auto-ran when you opened this view. Adjust inputs and re-run for a refreshed verdict."
-                : "All four agents fire in parallel against your inputs. Typical total time ≈ 15–30 seconds."}
+                : "Location, Market and Financials run in parallel, then Synthesis combines them. Typical total time ≈ 15–30 seconds."}
             </p>
           </div>
           <button
@@ -273,8 +295,8 @@ export function OverviewOrchestrator() {
           <div className="mt-4 p-3 rounded-lg bg-amber/5 border border-amber/30 text-[12px] flex items-start gap-2">
             <AlertCircle size={13} className="text-amber mt-0.5 shrink-0" />
             <span className="text-navy">
-              Missing required inputs: <span className="font-semibold">{blockers.join(", ")}</span>.
-              Walk back through the wizard to fill them.
+              {t("Missing required inputs:")} <span className="font-semibold">{blockers.map((b) => t(b)).join(", ")}</span>.
+              {" "}{t("Walk back through the wizard to fill them.")}
             </span>
           </div>
         )}
@@ -286,6 +308,10 @@ export function OverviewOrchestrator() {
           <AgentChip k="synthesis"  label={t("Synthesis")   || "Synthesis"} icon={Sparkles} state={run.synthesis} />
         </div>
       </div>
+
+      {/* Slot rendered right after the agents analysis card (e.g. the business
+          owner card) and before the live map. */}
+      {afterAgentCard}
 
       {/* Real interactive map — visible the moment a pin exists, enriched with
           live competitors + anchors once the Location agent finishes. */}
@@ -300,7 +326,7 @@ export function OverviewOrchestrator() {
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-emerald/10 text-emerald grid place-items-center"><Check size={16} /></div>
             <div className="flex-1">
-              <div className="label">AI synthesis · bank product</div>
+              <div className="label">{t("AI synthesis · bank product")}</div>
               <div className="font-display font-bold text-navy">{synthesis.bank_product}</div>
             </div>
           </div>
@@ -347,6 +373,7 @@ function AgentChip({ k, label, icon: Icon, state }: { k: AgentKey; label: string
  *  finishes. The user can re-pin from here too (same Nominatim search). */
 function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, number] }) {
   const { setInput } = useScenario();
+  const t = useT();
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -447,11 +474,11 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
       {/* Header strip */}
       <div className="px-5 py-4 border-b border-line flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="label">Location intelligence · live OSM map</div>
+          <div className="label">{t("Location intelligence · live OSM map")}</div>
           <div className="font-display font-bold text-navy text-lg truncate">
             {r?.district
               ? <>{r.district}<span className="text-muted font-medium">, Tashkent</span></>
-              : "Selected site"}
+              : t("Selected site")}
             {r?.road && <span className="text-muted font-medium"> · {r.road}</span>}
           </div>
           <div className="text-[11px] text-muted font-mono mt-0.5">
@@ -459,10 +486,10 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
           </div>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-muted shrink-0 pt-1">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-petrol ring-2 ring-white" /> Site</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber" /> Competitor</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-emerald" /> Transit</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-teal" /> Mall</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-petrol ring-2 ring-white" /> {t("Site")}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber" /> {t("Competitor")}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-emerald" /> {t("Transit")}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-teal" /> {t("Mall")}</span>
         </div>
       </div>
 
@@ -472,7 +499,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
         <div className="flex-1 relative">
           <input
             className="w-full pr-9 py-1 text-sm bg-transparent border-0 border-b border-line focus:outline-none focus:border-petrol"
-            placeholder="Re-pin to a different place — e.g. 'Mustaqillik Square', 'Inha University'…"
+            placeholder={t("Re-pin to a different place — e.g. 'Mustaqillik Square', 'Inha University'…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => hits.length && setSearchOpen(true)}
@@ -504,7 +531,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
             </div>
           )}
         </div>
-        <span className="text-[11px] text-muted hidden md:inline">Re-run agent after re-pinning</span>
+        <span className="text-[11px] text-muted hidden md:inline">{t("Re-run agent after re-pinning")}</span>
       </div>
 
       {/* Two-column body: map on the left, analysis on the right */}
@@ -524,6 +551,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
 }
 
 function AnalysisPanel({ r }: { r: LocationAgentResult }) {
+  const t = useT();
   const top = r.competitors.slice(0, 8);
   const anchors = r.anchors.slice(0, 8);
   const scoreTone = r.score >= 70 ? "text-emerald" : r.score >= 50 ? "text-amber" : "text-rose-500";
@@ -533,27 +561,27 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
       {/* Score banner */}
       <div className="flex items-end justify-between">
         <div>
-          <div className="label">Location score</div>
+          <div className="label">{t("Location score")}</div>
           <div className={clsx("font-display font-bold text-3xl leading-none", scoreTone)}>
             {r.score}
             <span className="text-base text-muted font-medium"> / 100</span>
           </div>
           <div className="text-[11px] text-muted mt-1">
-            Composite — foot traffic × anchors × competition
+            {t("Composite — foot traffic × anchors × competition")}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-[12px]">
-          <Stat k="Foot traffic" v={`~${r.foot_traffic_per_day}/d`} />
-          <Stat k="Walk"         v={`${r.walkability}/100`} />
-          <Stat k="Visibility"   v={`${r.visibility}/100`} />
-          <Stat k="Comp 500m"    v={String(r.competitors_within_500m)} />
+          <Stat k={t("Foot traffic")} v={`~${r.foot_traffic_per_day}/d`} />
+          <Stat k={t("Walk")}         v={`${r.walkability}/100`} />
+          <Stat k={t("Visibility")}   v={`${r.visibility}/100`} />
+          <Stat k={t("Comp 500m")}    v={String(r.competitors_within_500m)} />
         </div>
       </div>
 
       {/* Why this score */}
       {r.rationale.length > 0 && (
         <div>
-          <div className="label">Why this score</div>
+          <div className="label">{t("Why this score")}</div>
           <ul className="mt-2 space-y-1.5 text-[12.5px] text-navy/85">
             {r.rationale.map((x) => (
               <li key={x} className="flex items-start gap-2">
@@ -569,14 +597,18 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
       <div>
         <div className="flex items-center justify-between">
           <div className="label">
-            Competitors within 1 km · {r.competitors_within_1km} total
+            {t("Competitors within 1 km")} · {r.competitors_within_1km} {t("total")}
           </div>
           <span className="chip bg-amber/10 text-amber text-[10px]">
-            {r.competitors_within_500m} within 500m
+            {r.competitors_within_500m} {t("within 500m")}
           </span>
         </div>
         {top.length === 0 ? (
-          <div className="mt-2 text-[12px] text-muted">None found nearby — clean slate.</div>
+          <div className="mt-2 text-[12px] text-muted">
+            {r.sparse_data
+              ? t("Competitor data unavailable for this pin — score is a conservative estimate.")
+              : t("None found nearby — clean slate.")}
+          </div>
         ) : (
           <ul className="mt-2 divide-y divide-line">
             {top.map((c, i) => (
@@ -590,7 +622,7 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
               </li>
             ))}
             {r.competitors.length > top.length && (
-              <li className="pt-2 text-[11px] text-muted">+ {r.competitors.length - top.length} more on the map</li>
+              <li className="pt-2 text-[11px] text-muted">+ {r.competitors.length - top.length} {t("more on the map")}</li>
             )}
           </ul>
         )}
@@ -598,9 +630,9 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
 
       {/* Anchors */}
       <div>
-        <div className="label">Anchors driving traffic</div>
+        <div className="label">{t("Anchors driving traffic")}</div>
         {anchors.length === 0 ? (
-          <div className="mt-2 text-[12px] text-muted">No anchors within 800m — relies entirely on direct walk-by.</div>
+          <div className="mt-2 text-[12px] text-muted">{t("No anchors within 800m — relies entirely on direct walk-by.")}</div>
         ) : (
           <ul className="mt-2 divide-y divide-line">
             {anchors.map((a, i) => {
@@ -621,7 +653,7 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
               );
             })}
             {r.anchors.length > anchors.length && (
-              <li className="pt-2 text-[11px] text-muted">+ {r.anchors.length - anchors.length} more on the map</li>
+              <li className="pt-2 text-[11px] text-muted">+ {r.anchors.length - anchors.length} {t("more on the map")}</li>
             )}
           </ul>
         )}
@@ -629,7 +661,7 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
 
       {r.sparse_data && (
         <div className="text-[11px] text-amber p-3 bg-amber/5 border border-amber/30 rounded-lg">
-          OSM coverage is sparse around this point — the score is a conservative estimate.
+          {t("OSM coverage is sparse around this point — the score is a conservative estimate.")}
         </div>
       )}
     </div>
@@ -637,15 +669,15 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
 }
 
 function EmptyAnalysis() {
+  const t = useT();
   return (
     <div className="h-full flex flex-col items-center justify-center text-center py-10">
       <div className="w-12 h-12 rounded-xl2 bg-navy/5 text-muted grid place-items-center mb-4">
         <MapPin size={22} />
       </div>
-      <div className="font-display font-semibold text-navy">Site pinned · agent not run yet</div>
+      <div className="font-display font-semibold text-navy">{t("Site pinned · agent not run yet")}</div>
       <p className="text-[12px] text-muted mt-1 max-w-xs">
-        Run the analysis above and this panel will show real competitors,
-        anchors and the agent's reasoning for the location score.
+        {t("Run the analysis above and this panel will show real competitors, anchors and the agent's reasoning for the location score.")}
       </p>
     </div>
   );

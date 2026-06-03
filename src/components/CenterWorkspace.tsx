@@ -4,14 +4,15 @@ import {
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
-  BarChart, Bar, Cell, ReferenceDot, ReferenceLine,
+  ReferenceDot, ReferenceLine,
 } from "recharts";
 import clsx from "clsx";
 import { useDerived } from "../state";
 
 function RecHeader() {
   const d = useDerived();
-  const { inputs, completion } = useScenario();
+  const t = useT();
+  const { inputs, completion, result } = useScenario();
   if (!d) return null;
   const { scenario } = d;
   const allDone = completion.allMetrics;
@@ -35,30 +36,30 @@ function RecHeader() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 text-xs text-muted">
-            <span className="chip bg-navy/5 text-navy">Scenario</span>
-            <span>SCN-2026-0481 · v1.4</span>
+            <span className="chip bg-navy/5 text-navy">{t("Scenario")}</span>
+            <span>{result?.scenario_id ?? "—"}</span>
             <span>·</span>
-            <span>Updated just now</span>
+            <span>{t("Engine v1.4")}</span>
           </div>
           <h1 className="font-display text-2xl text-navy font-bold mt-1">
             {displayName} <span className="text-muted font-medium">·</span> {scenario.business}{scenario.location ? <> <span className="text-muted font-medium">in</span> {scenario.location}</> : null}
           </h1>
           <div className="flex items-center gap-3 mt-2">
-            <span className={clsx("chip text-white px-3 py-1 text-xs", tone.bg)}>{tone.label}</span>
+            <span className={clsx("chip text-white px-3 py-1 text-xs", tone.bg)}>{t(tone.label)}</span>
             {allDone ? (
               <span className="text-sm text-navy/80">
                 <span className="font-semibold">{scenario.confidence}%</span>
-                <span className="text-muted"> confidence</span>
+                <span className="text-muted"> {t("confidence")}</span>
               </span>
             ) : (
-              <span className="text-sm text-petrol font-semibold">{completedCount} of 3 metrics done</span>
+              <span className="text-sm text-petrol font-semibold">{completedCount} {t("of 3 metrics done")}</span>
             )}
-            <span className="text-xs text-muted">· Recommendation engine v1.4 · 6 flagship models</span>
+            <span className="text-xs text-muted">· {t("Recommendation engine v1.4 · 6 flagship models")}</span>
           </div>
           <p className="mt-3 text-sm text-navy/80 leading-relaxed max-w-2xl">
             {allDone
               ? scenario.blurb
-              : `Showing what's known so far for ${displayName}. Run the remaining ${3 - completedCount} agent${3 - completedCount === 1 ? "" : "s"} to lock in the final recommendation.`}
+              : `${t("Showing what's known so far.")} ${t("Run the remaining agents to lock in the final recommendation.")}`}
           </p>
         </div>
         <div className="flex flex-col gap-2 no-print">
@@ -70,13 +71,13 @@ function RecHeader() {
             title="Copy link to this scenario"
             className="px-3 py-2 text-xs font-medium border border-line rounded-lg flex items-center gap-1.5 hover:bg-navy/5"
           >
-            <Share2 size={14} /> Share
+            <Share2 size={14} /> {t("Share")}
           </button>
           <button
             onClick={() => window.print()}
             className="px-3 py-2 text-xs font-medium bg-navy text-white rounded-lg flex items-center gap-1.5 hover:bg-navy-700"
           >
-            <FileDown size={14} /> Export PDF
+            <FileDown size={14} /> {t("Export PDF")}
           </button>
         </div>
       </div>
@@ -86,6 +87,7 @@ function RecHeader() {
 
 function KpiRow() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { kpis } = d;
   return (
@@ -96,7 +98,7 @@ function KpiRow() {
         return (
           <div key={k.label} className={clsx("card p-4", !k.ready && "opacity-60")}>
             <div className="flex items-center justify-between">
-              <span className="label">{k.label}</span>
+              <span className="label">{t(k.label)}</span>
               <span className="text-[10px] text-muted">{k.model}</span>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
@@ -127,6 +129,7 @@ function KpiRow() {
 
 function DemandCard() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { demandSeries } = d;
   return (
@@ -134,7 +137,7 @@ function DemandCard() {
       <div className="flex items-center justify-between">
         <div>
           <div className="label">Demand · M-B1</div>
-          <div className="font-display font-bold text-navy">12-month forecast</div>
+          <div className="font-display font-bold text-navy">{t("12-month forecast")}</div>
         </div>
         <div className="seg w-44">
           <div className="seg-btn seg-btn-active">12M</div>
@@ -171,9 +174,9 @@ function DemandCard() {
         </ResponsiveContainer>
       </div>
       <div className="flex items-center gap-4 text-xs text-muted">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-petrol" /> Actual</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-teal" style={{borderTop:'1px dashed'}} /> Forecast</span>
-        <span className="ml-auto">Customer-intent index, indexed to district avg = 100</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-petrol" /> {t("Actual")}</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-teal" style={{borderTop:'1px dashed'}} /> {t("Forecast")}</span>
+        <span className="ml-auto">{t("Customer-intent index, indexed to district avg = 100")}</span>
       </div>
     </div>
   );
@@ -185,13 +188,14 @@ function DemandCard() {
 
 function FactorsCard() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { positives, risks } = d;
   return (
     <div className="card p-5">
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <div className="label flex items-center gap-1.5"><CheckCircle2 size={12} className="text-emerald" /> Top positive factors</div>
+          <div className="label flex items-center gap-1.5"><CheckCircle2 size={12} className="text-emerald" /> {t("Top positive factors")}</div>
           <ul className="mt-2 space-y-2 text-sm text-navy/85">
             {positives.map((p) => (
               <li key={p} className="flex items-start gap-2">
@@ -202,7 +206,7 @@ function FactorsCard() {
           </ul>
         </div>
         <div>
-          <div className="label flex items-center gap-1.5"><AlertTriangle size={12} className="text-amber" /> Key risk factors</div>
+          <div className="label flex items-center gap-1.5"><AlertTriangle size={12} className="text-amber" /> {t("Key risk factors")}</div>
           <ul className="mt-2 space-y-2 text-sm text-navy/85">
             {risks.map((p) => (
               <li key={p} className="flex items-start gap-2">
@@ -217,54 +221,9 @@ function FactorsCard() {
   );
 }
 
-function ExplainCard() {
-  const { result } = useScenario();
-  const models = result?.models ?? [];
-  const data = models.map((m) => ({
-    f: `${m.id} · ${m.name}`,
-    w: Math.round(m.confidence * 100),
-  }));
-  const ranCount = models.filter((m) => m.confidence > 0).length;
-  return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="label">Explainability · agent confidence</div>
-          <div className="font-display font-bold text-navy">Which agents drove the verdict?</div>
-        </div>
-        <span className="chip bg-navy/5 text-navy">Composite policy</span>
-      </div>
-      {data.length === 0 ? (
-        <div className="h-48 mt-3 flex items-center justify-center text-[12px] text-muted">
-          No agents have run yet.
-        </div>
-      ) : (
-        <div className="h-56 mt-3">
-          <ResponsiveContainer>
-            <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
-              <CartesianGrid stroke="#EFEAE0" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} stroke="#94A3B8" fontSize={11} axisLine={false} tickLine={false} />
-              <YAxis dataKey="f" type="category" stroke="#475569" fontSize={11} axisLine={false} tickLine={false} width={200} />
-              <Tooltip cursor={{ fill: "rgba(11,37,69,0.04)" }} contentStyle={{ border: "1px solid #E6E1D6", borderRadius: 8, fontSize: 12 }} formatter={(v) => `${v}% confidence`} />
-              <Bar dataKey="w" radius={[4,4,4,4]}>
-                {data.map((d, i) => (
-                  <Cell key={i} fill={d.w >= 60 ? "#10B981" : d.w > 0 ? "#1B4965" : "#E6E1D6"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-      <div className="mt-2 flex items-center justify-between text-[11px] text-muted">
-        <span>Live agents · {ranCount} of {models.length} ran</span>
-        <span>Bars show per-agent confidence</span>
-      </div>
-    </div>
-  );
-}
-
 function BankActionCard() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { bank, nextActions } = d;
   return (
@@ -274,27 +233,27 @@ function BankActionCard() {
           <Banknote size={18} />
         </div>
         <div className="flex-1">
-          <div className="label">Bank decision support · M-F1 · M-F2</div>
-          <div className="font-display font-bold text-navy">Recommended product</div>
+          <div className="label">{t("Bank decision support · M-F1 · M-F2")}</div>
+          <div className="font-display font-bold text-navy">{t("Recommended product")}</div>
         </div>
-        <span className="chip bg-emerald/15 text-emerald">Suggested</span>
+        <span className="chip bg-emerald/15 text-emerald">{t("Suggested")}</span>
       </div>
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div>
-          <div className="label">Product</div>
+          <div className="label">{t("Product")}</div>
           <div className="text-sm font-semibold text-navy mt-1">{bank.product}</div>
         </div>
         <div>
-          <div className="label">Loan size</div>
+          <div className="label">{t("Loan size")}</div>
           <div className="text-sm font-semibold text-navy mt-1">{bank.suggested_loan_m_uzs}M UZS <span className="text-muted font-normal">(±15M)</span></div>
         </div>
         <div>
-          <div className="label">Tenor</div>
-          <div className="text-sm font-semibold text-navy mt-1">24 months · 3M grace</div>
+          <div className="label">{t("Tenor")}</div>
+          <div className="text-sm font-semibold text-navy mt-1">{t("24 months · 3M grace")}</div>
         </div>
       </div>
       <div className="mt-4">
-        <div className="label flex items-center gap-1.5"><ShieldCheck size={12} /> Conditions & next actions</div>
+        <div className="label flex items-center gap-1.5"><ShieldCheck size={12} /> {t("Conditions & next actions")}</div>
         <ul className="mt-2 space-y-1.5 text-sm text-navy/85">
           {nextActions.map((a) => (
             <li key={a} className="flex items-start gap-2">
@@ -315,10 +274,11 @@ import { MarketAgent } from "./MarketAgent";
 import { FinancialsAgent } from "./FinancialsAgent";
 import { ProfileSetup } from "./ProfileSetup";
 import { OverviewOrchestrator } from "./OverviewOrchestrator";
-import { BorrowerLoanCard } from "./BorrowerLoanCard";
+import { BorrowerCard, LoanCard } from "./BorrowerLoanCard";
 import { BankerQueue } from "./BankerQueue";
 import { ContactGate } from "./ContactGate";
 import { useScenario, isContactComplete } from "../state";
+import { useT } from "../i18n";
 import { Lock as LockIcon } from "lucide-react";
 
 /* Old empty-state component removed — Overview now always renders the
@@ -326,6 +286,7 @@ import { Lock as LockIcon } from "lucide-react";
 
 function ScoreFormulaCard() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { composite, verdict, scoreFormula } = d;
   const verdictTone =
@@ -336,12 +297,12 @@ function ScoreFormulaCard() {
     <div className="card p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="label">Composite score · how we decide</div>
-          <div className="font-display font-bold text-navy">Weighted decision policy</div>
+          <div className="label">{t("Composite score · how we decide")}</div>
+          <div className="font-display font-bold text-navy">{t("Weighted decision policy")}</div>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[11px] text-muted">Final score</div>
+            <div className="text-[11px] text-muted">{t("Final score")}</div>
             <div className="font-display font-bold text-2xl text-navy leading-none">{composite}<span className="text-base text-muted font-medium"> / 100</span></div>
           </div>
           <span className={clsx("chip px-3 py-1 text-xs font-bold", verdictTone)}>{verdict.label}</span>
@@ -354,20 +315,20 @@ function ScoreFormulaCard() {
           return (
             <div key={b.block} className={clsx("rounded-lg bg-navy/[0.03] p-3", !b.ready && "opacity-50")}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-navy">{b.block}</span>
+                <span className="text-[11px] font-semibold text-navy">{t(b.block)}</span>
                 <span className="text-[10px] text-muted">{b.weight}%</span>
               </div>
               {b.ready ? (
                 <>
                   <div className="mt-1 font-display font-bold text-lg text-navy">{contrib}</div>
                   <div className="text-[10px] text-muted">
-                    {b.inverted ? `risk ${b.score} → ${eff}` : `score ${b.score}`}
+                    {b.inverted ? `${t("risk")} ${b.score} → ${eff}` : `${t("score")} ${b.score}`}
                   </div>
                 </>
               ) : (
                 <>
                   <div className="mt-1 font-display font-bold text-lg text-muted">—</div>
-                  <div className="text-[10px] text-muted">not run</div>
+                  <div className="text-[10px] text-muted">{t("not run")}</div>
                 </>
               )}
               <div className="mt-1.5 h-1 bg-navy/10 rounded-full overflow-hidden">
@@ -379,7 +340,7 @@ function ScoreFormulaCard() {
       </div>
       <div className="mt-3 text-[11px] text-muted flex items-center gap-3">
         <span>≥70 → YES</span><span>50–69 → MAYBE</span><span>&lt;50 → NO</span>
-        <span className="ml-auto">Engine v1.4 · transparent linear policy</span>
+        <span className="ml-auto">{t("Engine v1.4 · transparent linear policy")}</span>
       </div>
     </div>
   );
@@ -387,6 +348,7 @@ function ScoreFormulaCard() {
 
 function MarketSizeCard() {
   const d = useDerived();
+  const t = useT();
   if (!d) return null;
   const { marketSize } = d;
   const max = Math.max(...marketSize.map((m) => m.value));
@@ -395,10 +357,10 @@ function MarketSizeCard() {
     <div className="card p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="label">Market sizing · M-A1</div>
+          <div className="label">{t("Market sizing · M-A1")}</div>
           <div className="font-display font-bold text-navy">TAM · SAM · SOM</div>
         </div>
-        <span className="text-[11px] text-muted">Billion UZS · Y1</span>
+        <span className="text-[11px] text-muted">{t("Billion UZS · Y1")}</span>
       </div>
       <div className="mt-4 space-y-3">
         {marketSize.map((m) => (
@@ -423,6 +385,7 @@ function MarketSizeCard() {
 
 export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onChange: (v: ViewKey) => void; mode: Mode }) {
   const { completion, inputs } = useScenario();
+  const t = useT();
 
   // In banker mode the founder-side gating doesn't apply — the banker just
   // wants to browse / open queued applications.
@@ -442,11 +405,11 @@ export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onCha
       <div className="max-w-[1100px] mx-auto px-6 py-6 space-y-5">
         <div data-noprint className="flex items-center gap-2 text-xs text-muted">
           <Sparkles size={12} className="text-petrol" />
-          <span>AI Decision Cockpit</span>
+          <span>{t("AI Decision Cockpit")}</span>
           <span>›</span>
-          <span>{view === "Queue" ? "Deal Pipeline" : view}</span>
+          <span>{t(view === "Queue" ? "Deal Pipeline" : view)}</span>
           <span className="ml-auto flex items-center gap-2">
-            <span className="chip bg-navy/5 text-navy"><TrendingUp size={10} /> 6 flagship models active</span>
+            <span className="chip bg-navy/5 text-navy"><TrendingUp size={10} /> {t("6 flagship models active")}</span>
             <CompletionChip />
           </span>
         </div>
@@ -457,9 +420,9 @@ export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onCha
           ? <ProfileSetup onContinue={onChange} />
           : needsProfile
           ? <LockedScreen
-              title={`${view} agent is locked`}
-              body="Fill the business profile first so the agent has context to ground its analysis."
-              cta="Open Profile"
+              title={`${t(view)} ${t("agent is locked")}`}
+              body={t("Fill the business profile first so the agent has context to ground its analysis.")}
+              cta={t("Open Profile")}
               onClick={() => onChange("Profile")}
             />
           : view === "Location"   ? <LocationAgent   onChange={onChange} />
@@ -478,14 +441,15 @@ export function CenterWorkspace({ view, onChange, mode }: { view: ViewKey; onCha
 
 function CompletionChip() {
   const { completion, result } = useScenario();
+  const t = useT();
   const n = (completion.market ? 1 : 0) + (completion.location ? 1 : 0) + (completion.financials ? 1 : 0);
   if (!completion.profile)
-    return <span className="chip bg-amber/15 text-amber">Profile required</span>;
+    return <span className="chip bg-amber/15 text-amber">{t("Profile required")}</span>;
   if (n === 0)
-    return <span className="chip bg-amber/15 text-amber">No agents run yet</span>;
+    return <span className="chip bg-amber/15 text-amber">{t("No agents run yet")}</span>;
   if (n === 3 && result)
-    return <span className="chip bg-emerald/15 text-emerald">All agents complete</span>;
-  return <span className="chip bg-petrol/10 text-petrol">{n} of 3 agents complete</span>;
+    return <span className="chip bg-emerald/15 text-emerald">{t("All agents complete")}</span>;
+  return <span className="chip bg-petrol/10 text-petrol">{n} {t("of 3 agents complete")}</span>;
 }
 
 function LockedScreen({ title, body, cta, onClick }: { title: string; body: string; cta: string; onClick: () => void }) {
@@ -506,13 +470,16 @@ function LockedScreen({ title, body, cta, onClick }: { title: string; body: stri
 
 function OverviewDashboard({ onChange }: { onChange: (v: ViewKey) => void }) {
   const { completion, result } = useScenario();
+  const t = useT();
   const demandReady = !!result && result.demand.score > 0 && result.demand.forecast_index.length > 0;
   return (
     <>
-      {/* Always show the orchestrator at the top of Overview */}
-      <OverviewOrchestrator />
+      {/* Orchestrator renders the agent card, then the business-owner card,
+          then the live map — owner sits right after the agents analysis card. */}
+      <OverviewOrchestrator afterAgentCard={<BorrowerCard />} />
 
       <RecHeader />
+
       <ScoreFormulaCard />
       <KpiRow />
 
@@ -522,37 +489,52 @@ function OverviewDashboard({ onChange }: { onChange: (v: ViewKey) => void }) {
           : <FillToSeeCard target="Market" onChange={onChange} blurb="TAM / SAM / SOM and saturation index" />}
         {demandReady
           ? <DemandCard />
-          : <FillToSeeCard className="col-span-2" target="Overview" onChange={onChange} blurb="the demand forecast once the Demand agent is available" />}
+          : <DemandPlaceholder />}
       </section>
 
       <FactorsCard />
 
-      <BorrowerLoanCard />
+      <LoanCard />
 
-      <section className="grid grid-cols-2 gap-4">
-        <ExplainCard />
-        <BankActionCard />
-      </section>
+      <BankActionCard />
 
       <div className="text-[11px] text-muted text-center pt-2 pb-6">
-        Decision support · human-in-the-loop · audit log enabled · Recommendation engine v1.4
+        {t("Decision support · human-in-the-loop · audit log enabled · Recommendation engine v1.4")}
       </div>
     </>
   );
 }
 
+// There is no Demand agent yet, so the forecast block has no data to show.
+// Be honest about it instead of pointing the user back at the view they're on.
+function DemandPlaceholder() {
+  const t = useT();
+  return (
+    <div className="card p-6 col-span-2 flex flex-col items-center justify-center text-center bg-gradient-to-br from-white to-navy/[0.02]">
+      <div className="w-10 h-10 rounded-xl bg-navy/5 text-muted grid place-items-center mb-3">
+        <TrendingUp size={18} />
+      </div>
+      <div className="font-display font-semibold text-navy">{t("Demand forecast")}</div>
+      <div className="text-[12px] text-muted mt-1 max-w-sm">
+        {t("The dedicated demand-forecasting agent isn't live yet — this panel will show the 12-month forecast once it is. It does not affect the current composite score.")}
+      </div>
+    </div>
+  );
+}
+
 function FillToSeeCard({ target, blurb, onChange, className }: { target: ViewKey; blurb: string; onChange: (v: ViewKey) => void; className?: string }) {
+  const t = useT();
   return (
     <div className={clsx("card p-6 flex flex-col items-center justify-center text-center bg-gradient-to-br from-white to-navy/[0.02]", className)}>
       <div className="w-10 h-10 rounded-xl bg-navy/5 text-muted grid place-items-center mb-3">
         <LockIcon size={18} />
       </div>
-      <div className="font-display font-semibold text-navy">{target} not run yet</div>
-      <div className="text-[12px] text-muted mt-1">Fill the {target} agent to see {blurb}.</div>
+      <div className="font-display font-semibold text-navy">{t(target)} {t("not run yet")}</div>
+      <div className="text-[12px] text-muted mt-1">{t("Fill the")} {t(target)} {t("agent to see")} {t(blurb)}.</div>
       <button
         onClick={() => onChange(target)}
         className="mt-4 px-3 py-1.5 text-[12px] font-semibold border border-petrol text-petrol rounded-lg hover:bg-petrol hover:text-white transition"
-      >Open {target}</button>
+      >{t("Open")} {t(target)}</button>
     </div>
   );
 }

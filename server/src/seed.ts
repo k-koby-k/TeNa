@@ -214,6 +214,74 @@ const SEEDS: Seed[] = [
   },
 ];
 
+// Approximate centroids for the Tashkent districts used by the seeds, so each
+// seeded deal drops a real pin and its Overview map renders (instead of being
+// blank because no coordinates were ever saved).
+const DISTRICT_COORDS: Record<string, [number, number]> = {
+  "Chilonzor":       [41.2856, 69.2034],
+  "Yunusobod":       [41.3675, 69.2890],
+  "Mirzo Ulug'bek":  [41.3290, 69.3340],
+  "Sergeli":         [41.2280, 69.2200],
+  "Yashnobod":       [41.2880, 69.3280],
+  "Shaykhantakhur":  [41.3250, 69.2300],
+};
+
+// Move `meters` from (lat,lng) along `angleDeg` (0 = north, clockwise).
+function offsetMeters(lat: number, lng: number, meters: number, angleDeg: number): [number, number] {
+  const rad = (angleDeg * Math.PI) / 180;
+  const dLat = (meters / 111_111) * Math.cos(rad);
+  const dLng = (meters / (111_111 * Math.cos((lat * Math.PI) / 180))) * Math.sin(rad);
+  return [lat + dLat, lng + dLng];
+}
+
+// Build a plausible LocationAgentResult for a seed: competitors scattered around
+// the pin (so the map has markers), a couple of traffic anchors, and rationale
+// derived from the seed's own numbers. This makes a reopened seeded deal look
+// exactly like a freshly-run one.
+function buildLocationAgent(s: Seed, lat: number, lng: number) {
+  const within1km = s.competitors_500m + 3;
+  const competitors = Array.from({ length: within1km }, (_, i) => {
+    // First `competitors_500m` sit inside 500m, the rest spread out to ~900m.
+    const meters = i < s.competitors_500m ? 140 + i * 55 : 540 + (i - s.competitors_500m) * 130;
+    const angle = (i * 137.5) % 360; // golden-angle scatter — evenly spread
+    const [clat, clng] = offsetMeters(lat, lng, Math.min(meters, 950), angle);
+    return {
+      name: `${s.business_type} #${i + 1}`,
+      kind: s.business_type.toLowerCase(),
+      distance_m: Math.round(Math.min(meters, 950)),
+      lat: clat, lng: clng,
+    };
+  });
+
+  const [tLat, tLng] = offsetMeters(lat, lng, 260, 20);
+  const [mLat, mLng] = offsetMeters(lat, lng, 380, 200);
+  const anchors = [
+    { name: `${s.district} metro`, type: "transit", distance_m: 260, lat: tLat, lng: tLng },
+    { name: `${s.district} bozor`, type: "market",  distance_m: 380, lat: mLat, lng: mLng },
+  ];
+
+  return {
+    foot_traffic_per_day: s.foot_traffic,
+    competitors_within_500m: s.competitors_500m,
+    competitors_within_1km: within1km,
+    walkability: 60 + Math.round(s.location_score * 0.3),
+    visibility: 60 + Math.round(s.location_score * 0.25),
+    score: s.location_score,
+    competitors,
+    anchors,
+    rationale: [
+      `~${s.foot_traffic.toLocaleString()} estimated daily foot traffic at this point`,
+      `${s.competitors_500m} direct competitor${s.competitors_500m === 1 ? "" : "s"} within 500m, ${within1km} within 1km`,
+      `Transit + market anchors within 400m support walk-by demand`,
+    ],
+    sparse_data: false,
+    district: s.district,
+    neighborhood: null,
+    road: null,
+    display_address: `${s.district}, Tashkent`,
+  };
+}
+
 function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
   const composite = Math.round(
     (s.market_score * 20 + s.location_score * 25 + s.financial_score * 25 + (100 - s.failure_pct) * 10) / 80,
@@ -228,7 +296,9 @@ function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
   const created_at = new Date(Date.now() - s.hours_ago * 3600_000).toISOString();
   const idSuffix = Math.random().toString(36).slice(2, 8).toUpperCase();
 
-  const req: AnalyzeRequest = {
+  const [lat, lng] = DISTRICT_COORDS[s.district] ?? [41.3110, 69.2797]; // fallback: Tashkent centre
+
+  const req: AnalyzeRequest & Record<string, unknown> = {
     business_type: s.business_type,
     district: s.district,
     city: "Tashkent",
@@ -239,6 +309,13 @@ function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
     notes: s.description,
     contact_name: s.owner,
     contact_phone: s.phone,
+    // Extra fields the client hydrate() restores so the map + analysis panel
+    // render for a seeded deal exactly like a freshly-run one.
+    business_name: s.business_name,
+    description: s.description,
+    pin_lat: lat,
+    pin_lng: lng,
+    location_agent: buildLocationAgent(s, lat, lng),
   };
 
   const res: AnalyzeResponse = {
@@ -307,16 +384,23 @@ function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
   return { req, res, _at: created_at } as any;
 }
 
-export function seedHistory(record: (req: AnalyzeRequest, res: AnalyzeResponse) => any) {
+type SeedRecord = (
+  req: AnalyzeRequest & object,
+  res: AnalyzeResponse,
+  meta: { ownerId: string | null; source: "own" | "marketplace"; submittedBy?: string; createdAt?: string },
+) => void | Promise<unknown>;
+
+export async function seedHistory(record: SeedRecord) {
   // Insert in reverse chronological order so the oldest goes in first,
-  // and unshift() puts the newest on top (matching real /analyze behaviour).
+  // and the newest ends up on top (matching real /analyze behaviour).
   const sorted = [...SEEDS].sort((a, b) => b.hours_ago - a.hours_ago);
   for (const s of sorted) {
     const { req, res, _at } = buildEntry(s) as any;
-    const entry = record(req, res);
-    // Override the timestamp so the banker view shows realistic recency.
-    entry.created_at = _at;
-    entry.source = "marketplace";
-    entry.submitted_by = "TeNa marketplace";
+    await record(req, res, {
+      ownerId: null,
+      source: "marketplace",
+      submittedBy: "TeNa marketplace",
+      createdAt: _at,
+    });
   }
 }

@@ -137,7 +137,7 @@ Return the structured viability snapshot.`;
       systemInstruction: SYSTEM,
       responseMimeType: "application/json",
       responseSchema: SCHEMA as any,
-      temperature: 0.3,
+      temperature: 0,
     },
   });
 

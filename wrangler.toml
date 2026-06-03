@@ -1,0 +1,32 @@
+# Cloudflare Pages config. The project name decides the URL: `tena` → tena.pages.dev
+# (falls back to e.g. tena-app.pages.dev if "tena" is already taken globally).
+name = "tena"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The SPA + API both run from the bundled Worker at dist/_worker.js
+# (built by `npm run build:worker`). Static files in dist/ are served as assets.
+
+# Non-secret config. Secrets (GEMINI_API_KEY, COOKIE_SECRET) are set with
+# `wrangler pages secret put`, not here.
+[vars]
+USE_MOCK = "false"
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# --- D1 (database) -------------------------------------------------------
+# Create with:  wrangler d1 create tena-db
+# then paste the printed database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "tena-db"
+database_id = "3fb4ed01-90d1-482d-8c77-f1b1794b99c3"
+migrations_dir = "server/migrations"
+
+# --- KV (rate-limit counters) -------------------------------------------
+# Create with:  wrangler kv namespace create RL
+# then paste the printed id below.
+[[kv_namespaces]]
+binding = "RL"
+id = "d6edaee7fcf443e8b75be20edd579b0f"
+

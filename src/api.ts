@@ -59,6 +59,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (r.status === 429) {
+    // Our per-user/IP rate limiter. Keep the `rate_limited` marker so callers
+    // (e.g. the orchestrator) can detect it and not bother retrying.
+    throw new Error("rate_limited: Too many requests — please wait a few minutes and try again.");
+  }
   if (!r.ok) {
     const detail = await r.text().catch(() => "");
     throw new Error(`${path} ${r.status}: ${detail.slice(0, 200)}`);

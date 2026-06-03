@@ -252,6 +252,9 @@ const DICT: Record<string, { uz: string }> = {
   "Capital base":                         { uz: "Kapital asosi" },
   "Not allocated yet.":                   { uz: "Hali taqsimlanmagan." },
   "100% allocated":                       { uz: "100% taqsimlangan" },
+  "allocated":                            { uz: "taqsimlangan" },
+  "months":                               { uz: "oy" },
+  "Net income ÷ payment":                 { uz: "Sof daromad ÷ to'lov" },
 
   // === Assistant chat ===
   "Ask the AI":                           { uz: "AI dan so'rang" },
@@ -281,6 +284,131 @@ const DICT: Record<string, { uz: string }> = {
   "Show my analysis":                     { uz: "Tahlilimni ko'rsatish" },
   "We only share your contact with the bank reviewing this deal.":
                                           { uz: "Kontaktingizni faqat ushbu bitimni ko'rib chiqayotgan bank bilan bo'lishamiz." },
+
+  // === Overview chrome / breadcrumb / completion ===
+  "AI Decision Cockpit":                  { uz: "AI qaror kabineti" },
+  "6 flagship models active":             { uz: "6 ta yetakchi model faol" },
+  "Profile required":                     { uz: "Profil talab qilinadi" },
+  "No agents run yet":                    { uz: "Hali agentlar ishlamadi" },
+  "All agents complete":                  { uz: "Barcha agentlar tugadi" },
+  "of 3 agents complete":                 { uz: "/ 3 agent tugadi" },
+
+  // === Recommendation header ===
+  "Scenario":                             { uz: "Stsenariy" },
+  "Engine v1.4":                          { uz: "Tizim v1.4" },
+  "Analysis in progress":                 { uz: "Tahlil jarayonda" },
+  "Yes, open here":                       { uz: "Ha, oching" },
+  "Proceed with caution":                 { uz: "Ehtiyotkorlik bilan" },
+  "Not recommended":                      { uz: "Tavsiya etilmaydi" },
+  "confidence":                           { uz: "ishonch" },
+  "of 3 metrics done":                    { uz: "/ 3 ko'rsatkich bajarildi" },
+  "Recommendation engine v1.4 · 6 flagship models":
+                                          { uz: "Tavsiya tizimi v1.4 · 6 ta yetakchi model" },
+  "Showing what's known so far.":         { uz: "Hozircha ma'lum bo'lgan ma'lumotlar." },
+  "Run the remaining agents to lock in the final recommendation.":
+                                          { uz: "Yakuniy tavsiyani aniqlash uchun qolgan agentlarni ishga tushiring." },
+  "Share":                                { uz: "Ulashish" },
+  "Export PDF":                           { uz: "PDF yuklab olish" },
+
+  // === KPI labels ===
+  "Market Opportunity":                   { uz: "Bozor imkoniyati" },
+  "Demand Forecast":                      { uz: "Talab prognozi" },
+  "Location Score":                       { uz: "Joylashuv bahosi" },
+  "Viability Score":                      { uz: "Hayotiylik bahosi" },
+  "Credit Readiness":                     { uz: "Kredit tayyorligi" },
+
+  // === Demand card ===
+  "12-month forecast":                    { uz: "12 oylik prognoz" },
+  "Actual":                               { uz: "Haqiqiy" },
+  "Forecast":                             { uz: "Prognoz" },
+  "Customer-intent index, indexed to district avg = 100":
+                                          { uz: "Mijoz qiziqishi indeksi, tuman o'rtachasi = 100" },
+  "Demand forecast":                      { uz: "Talab prognozi" },
+  "The dedicated demand-forecasting agent isn't live yet — this panel will show the 12-month forecast once it is. It does not affect the current composite score.":
+                                          { uz: "Maxsus talab prognozi agenti hali ishga tushmagan — u ishga tushgach, bu panel 12 oylik prognozni ko'rsatadi. Bu joriy yig'ma bahoga ta'sir qilmaydi." },
+
+  // === Score formula card ===
+  "Demand":                               { uz: "Talab" },
+  "Financial":                            { uz: "Moliyaviy" },
+  "Risk":                                 { uz: "Xavf" },
+  "score":                                { uz: "baho" },
+  "risk":                                 { uz: "xavf" },
+  "not run":                              { uz: "ishlamadi" },
+  "Engine v1.4 · transparent linear policy":
+                                          { uz: "Tizim v1.4 · shaffof chiziqli siyosat" },
+
+  // === Market size card ===
+  "Market sizing · M-A1":                 { uz: "Bozor hajmi · M-A1" },
+  "Billion UZS · Y1":                     { uz: "Milliard UZS · 1-yil" },
+
+  // === Bank action card ===
+  "Bank decision support · M-F1 · M-F2":  { uz: "Bank qarorini qo'llab-quvvatlash · M-F1 · M-F2" },
+  "Recommended product":                  { uz: "Tavsiya etilgan mahsulot" },
+  "Suggested":                            { uz: "Taklif etilgan" },
+  "Product":                              { uz: "Mahsulot" },
+  "Loan size":                            { uz: "Kredit hajmi" },
+  "24 months · 3M grace":                 { uz: "24 oy · 3 oy imtiyoz" },
+  "Conditions & next actions":            { uz: "Shartlar va keyingi qadamlar" },
+
+  // === Borrower card (own card) ===
+  "Business owner":                       { uz: "Biznes egasi" },
+  "Unnamed business":                     { uz: "Nomsiz biznes" },
+  "Planned headcount":                    { uz: "Rejalashtirilgan xodimlar" },
+  "Co-signer":                            { uz: "Kafil" },
+
+  // === Locked / fill-to-see states ===
+  "agent is locked":                      { uz: "agenti bloklangan" },
+  "Fill the business profile first so the agent has context to ground its analysis.":
+                                          { uz: "Avval biznes profilini to'ldiring, shunda agent tahlil uchun kontekstga ega bo'ladi." },
+  "Open Profile":                         { uz: "Profilni ochish" },
+  "not run yet":                          { uz: "hali ishlamadi" },
+  "Open":                                 { uz: "Ochish" },
+  "Fill the":                             { uz: "Quyidagini to'ldiring:" },
+  "agent to see":                         { uz: "agentini ko'rish uchun" },
+  "TAM / SAM / SOM and saturation index": { uz: "TAM / SAM / SOM va to'yinganlik indeksi" },
+  "Decision support · human-in-the-loop · audit log enabled · Recommendation engine v1.4":
+                                          { uz: "Qaror qo'llab-quvvatlash · inson nazoratida · audit jurnali yoqilgan · Tavsiya tizimi v1.4" },
+
+  // === Orchestrator copy ===
+  "Agents auto-ran when you opened this view. Adjust inputs and re-run for a refreshed verdict.":
+                                          { uz: "Bu sahifani ochganingizda agentlar avtomatik ishladi. Ma'lumotlarni o'zgartirib, yangilangan xulosa uchun qayta ishga tushiring." },
+  "Location, Market and Financials run in parallel, then Synthesis combines them. Typical total time ≈ 15–30 seconds.":
+                                          { uz: "Joylashuv, Bozor va Moliya parallel ishlaydi, so'ng Sintez ularni birlashtiradi. Odatda ≈ 15–30 soniya." },
+  "Synthesis":                            { uz: "Sintez" },
+  "AI synthesis · bank product":          { uz: "AI sintezi · bank mahsuloti" },
+  "Missing required inputs:":             { uz: "Zarur ma'lumotlar yetishmayapti:" },
+  "Walk back through the wizard to fill them.":
+                                          { uz: "Ularni to'ldirish uchun bosqichlarga qayting." },
+  "business type":                        { uz: "biznes turi" },
+  "map pin":                              { uz: "xarita belgisi" },
+  "average ticket":                       { uz: "o'rtacha chek" },
+  "customers/day":                        { uz: "kuniga mijozlar" },
+  "monthly rent":                         { uz: "oylik ijara" },
+  "startup capital":                      { uz: "boshlang'ich kapital" },
+  "Selected site":                        { uz: "Tanlangan manzil" },
+  "Anchors driving traffic":              { uz: "Oqim keltiruvchi nuqtalar" },
+  "None found nearby — clean slate.":     { uz: "Yaqin atrofda topilmadi — toza maydon." },
+  "Competitor data unavailable for this pin — score is a conservative estimate.":
+                                          { uz: "Bu nuqta uchun raqobatchi ma'lumotlari mavjud emas — baho ehtiyotkorona taxmin." },
+  "Mall":                                 { uz: "Savdo markazi" },
+  "Re-pin to a different place — e.g. 'Mustaqillik Square', 'Inha University'…":
+                                          { uz: "Boshqa joyga belgi qo'ying — masalan, 'Mustaqillik maydoni', 'Inha universiteti'…" },
+  "Re-run agent after re-pinning":        { uz: "Belgini ko'chirgach agentni qayta ishga tushiring" },
+  "Composite — foot traffic × anchors × competition":
+                                          { uz: "Yig'ma — piyodalar oqimi × nuqtalar × raqobat" },
+  "Walk":                                 { uz: "Piyoda" },
+  "Comp 500m":                            { uz: "Raqobat 500m" },
+  "Competitors within 1 km":              { uz: "1 km ichidagi raqobatchilar" },
+  "total":                                { uz: "jami" },
+  "within 500m":                          { uz: "500m ichida" },
+  "more on the map":                      { uz: "xaritada ko'proq" },
+  "No anchors within 800m — relies entirely on direct walk-by.":
+                                          { uz: "800m ichida nuqtalar yo'q — to'liq o'tib ketuvchilarga bog'liq." },
+  "OSM coverage is sparse around this point — the score is a conservative estimate.":
+                                          { uz: "Bu nuqta atrofida OSM ma'lumotlari kam — baho ehtiyotkorona taxmin." },
+  "Site pinned · agent not run yet":      { uz: "Manzil belgilandi · agent hali ishlamadi" },
+  "Run the analysis above and this panel will show real competitors, anchors and the agent's reasoning for the location score.":
+                                          { uz: "Yuqorida tahlilni ishga tushiring va bu panel haqiqiy raqobatchilar, nuqtalar va joylashuv bahosi izohini ko'rsatadi." },
 
   // === Common ===
   "Loading…":                             { uz: "Yuklanmoqda..." },

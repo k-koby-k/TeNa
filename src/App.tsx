@@ -6,12 +6,23 @@ import { ScenarioProvider } from "./state";
 import { LanguageProvider } from "./i18n";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 
-// Which product is this? The host decides:
-//   platform.tena…  → banker workspace (real login lives here later)
-//   client.tena… / anything else → founder (business owner, no login)
-// On localhost we keep a manual switch so both can be demoed from one origin.
+// Which product is this?
+//   • ?role=banker / ?role=founder in the URL wins (and is remembered)
+//   • otherwise the last choice saved in localStorage
+//   • otherwise a `platform.` host → banker
+//   • otherwise founder (business owner, no login)
+// This makes banker mode reachable on the deployed site (e.g. tena…/?role=banker)
+// where there's no `platform.` subdomain.
+const MODE_KEY = "tena.mode";
 function detectMode(): Mode {
   if (typeof window === "undefined") return "founder";
+  const q = new URLSearchParams(window.location.search).get("role");
+  if (q === "banker" || q === "founder") {
+    try { localStorage.setItem(MODE_KEY, q); } catch { /* ignore */ }
+    return q;
+  }
+  const saved = localStorage.getItem(MODE_KEY);
+  if (saved === "banker" || saved === "founder") return saved;
   return window.location.hostname.startsWith("platform.") ? "banker" : "founder";
 }
 
@@ -21,15 +32,19 @@ export default function App() {
   const [assistantOpen, setAssistantOpen] = useState(() =>
     typeof window === "undefined" ? true : window.innerWidth >= 1440
   );
-  // Manual founder/banker switching is a dev/demo affordance only — in
-  // production each role gets its own subdomain.
-  const allowModeSwitch = import.meta.env.DEV;
+  // Allow the in-app founder/banker switch everywhere (the audience is a known
+  // group), and remember the choice so a reload keeps the role.
+  const allowModeSwitch = true;
+  const handleModeChange = (m: Mode) => {
+    setMode(m);
+    try { localStorage.setItem(MODE_KEY, m); } catch { /* ignore */ }
+  };
 
   return (
     <LanguageProvider>
       <ScenarioProvider>
         <div className="h-full flex bg-ivory">
-          <Sidebar active={view} onChange={setView} mode={mode} onModeChange={setMode} allowModeSwitch={allowModeSwitch} />
+          <Sidebar active={view} onChange={setView} mode={mode} onModeChange={handleModeChange} allowModeSwitch={allowModeSwitch} />
           <CenterWorkspace view={view} onChange={setView} mode={mode} />
           <button
             onClick={() => setAssistantOpen((v) => !v)}

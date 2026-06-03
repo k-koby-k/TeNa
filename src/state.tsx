@@ -115,7 +115,10 @@ export interface ScenarioInputs {
 // Click "+ New analysis" to wipe back to EMPTY_INPUTS.
 const DEFAULT_INPUTS: ScenarioInputs = {
   business_name: "Black Bean Co.", business_type: "Coffee shop",
-  contact_name: "Sardor Aliyev", contact_phone: "+998 90 123 45 67",
+  // Left blank on purpose: contact is collected by the ContactGate right before
+  // the founder sees results (our no-login stand-in for an account). Pre-filling
+  // it here would satisfy isContactComplete() and silently skip the gate.
+  contact_name: "", contact_phone: "",
   format: "premium", stage: "pilot",
   description: "Premium specialty coffee shop near Chilonzor metro, targeting young professionals with on-site roasting, evening dessert pairings and work-friendly seating.",
   target_audience: "office",
@@ -480,6 +483,15 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       restored.notes = req.notes ?? restored.notes;
       setInputs(restored);
       setResult(res);
+      // Restore the live agent outputs that were saved alongside the request, so
+      // a reopened scenario shows the SAME map (competitors/anchors), location
+      // score and synthesis it had when first run. Fall back to null (not the
+      // previous scenario's data) when an entry predates this — otherwise the
+      // map kept showing the last analysis's competitors at the wrong place.
+      const savedLocation = (req as Record<string, unknown>).location_agent as LocationAgentResult | undefined;
+      const savedSynthesis = (req as Record<string, unknown>).synthesis as SynthesizeResult | undefined;
+      setLocationAgent(savedLocation ?? null);
+      setSynthesis(savedSynthesis ?? null);
     },
     missing: missingProfile(inputs),
     completion: deriveCompletion(inputs, result),

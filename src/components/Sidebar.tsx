@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, BarChart3, MapPin, Wallet,
-  ShieldCheck, Sparkles, Plus, ArrowRight,
+  Sparkles, Plus, ArrowRight,
   ClipboardList, Lock, Check as CheckIcon,
   Building2, UserCircle, BriefcaseBusiness,
   ChevronDown,
@@ -30,7 +30,6 @@ const FOUNDER_NAV: { icon: any; label: ViewKey }[] = [
   { icon: BarChart3,       label: "Market" },
   { icon: Wallet,          label: "Financials" },
   { icon: LayoutDashboard, label: "Overview" },
-  { icon: ShieldCheck,     label: "Explainability" },
 ];
 
 const BANKER_EXTRA_NAV: { icon: any; label: ViewKey }[] = [
@@ -85,6 +84,9 @@ export function Sidebar({
   };
 
   // Re-fetch whenever the current result changes (a new analysis was just saved).
+  // /api/history is now cookie-scoped: it returns THIS person's own analyses
+  // (the anonymous cookie is our no-login identity), so it's correct for both
+  // founders (their previous analyses) and bankers (their own submissions).
   useEffect(() => {
     let cancelled = false;
     api.history()
@@ -185,6 +187,8 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Recent = this person's own analyses, cookie-scoped (our no-login
+          identity). Shown for founders and bankers alike. */}
       <div className="px-3 mt-6 flex-1 min-h-0 flex flex-col">
         <button
           onClick={() => onChange("History")}
