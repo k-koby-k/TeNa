@@ -108,10 +108,14 @@ export function createD1Store(db: D1Database): StoreApi {
   };
 }
 
-/** Insert the demo marketplace once, if the table is empty. Cheap to call on
- *  every cold start — it short-circuits after the first row exists. */
+/** Insert the demo marketplace once, if it isn't there yet. Cheap to call on
+ *  every cold start — it short-circuits once the seeds exist. Counts only
+ *  marketplace rows so real founder submissions don't suppress (re)seeding, and
+ *  the deterministic seed ids mean a concurrent double-run upserts, not dupes. */
 export async function ensureSeeded(db: D1Database): Promise<void> {
-  const row = await db.prepare("SELECT COUNT(*) AS n FROM scenarios").first<{ n: number }>();
+  const row = await db
+    .prepare("SELECT COUNT(*) AS n FROM scenarios WHERE source = 'marketplace'")
+    .first<{ n: number }>();
   if ((row?.n ?? 0) > 0) return;
   const store = createD1Store(db);
   await seedHistory((req, res, meta) => store.record(req, res, meta));

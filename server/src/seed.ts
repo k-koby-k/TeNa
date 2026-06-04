@@ -294,7 +294,10 @@ function buildEntry(s: Seed): { req: AnalyzeRequest; res: AnalyzeResponse } {
     : "Not recommended";
 
   const created_at = new Date(Date.now() - s.hours_ago * 3600_000).toISOString();
-  const idSuffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  // Deterministic id derived from the business name — so if the seeder runs more
+  // than once (e.g. two Worker isolates cold-start at the same time), the second
+  // run UPSERTS the same rows instead of inserting duplicates.
+  const idSuffix = s.business_name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || "SEED";
 
   const [lat, lng] = DISTRICT_COORDS[s.district] ?? [41.3110, 69.2797]; // fallback: Tashkent centre
 
