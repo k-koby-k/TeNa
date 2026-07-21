@@ -9,7 +9,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { ExtractedProfile } from "./extract-profile.js";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 
 let _client: GoogleGenAI | null = null;
 function client(): GoogleGenAI {

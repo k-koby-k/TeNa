@@ -8,7 +8,7 @@ import type {
   CompetitionBlock, CreditBlock,
 } from "./../schemas.js";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 
 let _client: GoogleGenAI | null = null;
 function client(): GoogleGenAI {
