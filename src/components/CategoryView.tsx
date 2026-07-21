@@ -10,6 +10,7 @@ import { ShieldCheck, History, FileText, Search } from "lucide-react";
 import type { ViewKey } from "./Sidebar";
 import { useScenario } from "../state";
 import { api, type HistoryItem } from "../api";
+import { useT } from "../i18n";
 
 export function CategoryView({ view }: { view: ViewKey }) {
   if (view === "Explainability") return <ExplainabilityView />;
@@ -22,6 +23,7 @@ export function CategoryView({ view }: { view: ViewKey }) {
 function ExplainabilityView() {
   const { result } = useScenario();
   const models = result?.models ?? [];
+  const t = useT();
 
   return (
     <div className="card p-6">
@@ -30,11 +32,10 @@ function ExplainabilityView() {
           <ShieldCheck size={20} />
         </div>
         <div className="flex-1">
-          <div className="label">Governance · agent registry</div>
-          <h1 className="font-display text-xl text-navy font-bold">Explainability & model metadata</h1>
+          <div className="label">{t("Governance · agent registry")}</div>
+          <h1 className="font-display text-xl text-navy font-bold">{t("Explainability & model metadata")}</h1>
           <p className="text-sm text-muted mt-0.5">
-            Every agent that ran for the current scenario, with its version, confidence and model lineage.
-            Confidence of 0 means the agent was not invoked yet.
+            {t("Every agent that ran for the current scenario, with its version, confidence and model lineage. Confidence of 0 means the agent was not invoked yet.")}
           </p>
         </div>
       </div>
@@ -42,7 +43,7 @@ function ExplainabilityView() {
       <div className="mt-6 grid grid-cols-2 gap-3">
         {models.length === 0 ? (
           <div className="col-span-2 text-[12px] text-muted py-8 text-center">
-            No analysis run yet — go to Overview and press <span className="font-semibold text-navy">Run full analysis</span>.
+            {t("No analysis run yet — go to Overview and press")} <span className="font-semibold text-navy">{t("Run full analysis")}</span>.
           </div>
         ) : models.map((m) => {
           const ran = m.confidence > 0;
@@ -52,11 +53,11 @@ function ExplainabilityView() {
                 <span className="chip bg-navy/5 text-navy">{m.id}</span>
                 <span className="text-[11px] text-muted">v{m.version}</span>
               </div>
-              <div className="mt-2 font-display font-semibold text-navy">{m.name}</div>
+              <div className="mt-2 font-display font-semibold text-navy">{t(m.name)}</div>
               <div className="text-[11px] text-muted">
                 {ran
-                  ? <>Confidence {Math.round(m.confidence * 100)}% · ran {m.last_retrain}</>
-                  : "Not invoked for this scenario"}
+                  ? <>{t("Confidence")} {Math.round(m.confidence * 100)}% · {t("ran")} {m.last_retrain}</>
+                  : t("Not invoked for this scenario")}
               </div>
               <div className="mt-2 h-1.5 bg-navy/5 rounded-full overflow-hidden">
                 <div className="h-full bg-petrol" style={{ width: `${m.confidence * 100}%` }} />
@@ -67,7 +68,7 @@ function ExplainabilityView() {
       </div>
 
       <div className="mt-6 pt-4 border-t border-line text-[11px] text-muted">
-        Decision support · human-in-the-loop · audit log enabled · agents and the synthesis layer all run on Gemini 2.5 Flash with structured-output schemas.
+        {t("Decision support · human-in-the-loop · audit log enabled · agents and the synthesis layer all run on Gemini 2.5 Flash with structured-output schemas.")}
       </div>
     </div>
   );
@@ -79,16 +80,17 @@ const tone = (s: string) =>
   s === "YES" ? "bg-emerald/15 text-emerald"
   : s === "MAYBE" ? "bg-amber/15 text-amber"
   : "bg-rose-100 text-rose-600";
-const toneLabel = (s: string) => (s === "YES" ? "Launch" : s === "MAYBE" ? "Caution" : "Not now");
+const toneLabel = (s: string, t: (key: string) => string) =>
+  s === "YES" ? t("Launch") : s === "MAYBE" ? t("Caution") : t("Not now");
 
-const fmtTime = (iso: string) => {
+const fmtTime = (iso: string, t: (key: string) => string) => {
   const d = new Date(iso);
   const today = new Date();
   const yest = new Date(today.getTime() - 86400_000);
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   const hhmm = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  if (sameDay(d, today)) return `Today · ${hhmm}`;
-  if (sameDay(d, yest))  return `Yesterday · ${hhmm}`;
+  if (sameDay(d, today)) return `${t("Today")} · ${hhmm}`;
+  if (sameDay(d, yest))  return `${t("Yesterday")} · ${hhmm}`;
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ` · ${hhmm}`;
 };
 
@@ -97,6 +99,7 @@ function HistoryView() {
   const [query, setQuery] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const { hydrate } = useScenario();
+  const t = useT();
 
   useEffect(() => {
     let cancelled = false;
@@ -126,18 +129,17 @@ function HistoryView() {
           <History size={20} />
         </div>
         <div className="flex-1">
-          <div className="label">My workspace · analysis history</div>
-          <h1 className="font-display text-xl text-navy font-bold">My Analyses</h1>
+          <div className="label">{t("My workspace · analysis history")}</div>
+          <h1 className="font-display text-xl text-navy font-bold">{t("My Analyses")}</h1>
           <p className="text-sm text-muted mt-0.5">
-            Scenarios analyzed by this account. The bank Deal Pipeline includes these plus
-            businesses sourced from other founders and partners.
+            {t("Scenarios analyzed by this account. The bank Deal Pipeline includes these plus businesses sourced from other founders and partners.")}
           </p>
         </div>
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
             className="input pl-8 w-56"
-            placeholder="Search analyses…"
+            placeholder={t("Search analyses…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -146,19 +148,19 @@ function HistoryView() {
 
       <div className="mt-5 flex items-center justify-between">
         <span className="chip bg-navy/5 text-navy">
-          <FileText size={12} /> My analyses · {items?.length ?? 0}
+          <FileText size={12} /> {t("My analyses")} · {items?.length ?? 0}
         </span>
-        <div className="text-[11px] text-muted">Sorted by most recent</div>
+        <div className="text-[11px] text-muted">{t("Sorted by most recent")}</div>
       </div>
 
-      {err && <div className="mt-3 text-[12px] text-rose-600">Failed to load history: {err}</div>}
+      {err && <div className="mt-3 text-[12px] text-rose-600">{t("Failed to load history:")} {err}</div>}
 
       {items === null && !err && (
-        <div className="mt-6 text-sm text-muted text-center py-8">Loading…</div>
+        <div className="mt-6 text-sm text-muted text-center py-8">{t("Loading…")}</div>
       )}
       {items !== null && visible.length === 0 && (
         <div className="mt-6 text-sm text-muted text-center py-8">
-          {query ? "No matches." : "Run your first analysis — it'll show up here."}
+          {query ? t("No matches.") : t("Run your first analysis — it'll show up here.")}
         </div>
       )}
 
@@ -175,12 +177,12 @@ function HistoryView() {
                 {r.business_type} <span className="text-muted font-normal">· {r.location}</span>
               </div>
               <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
-                <span>{fmtTime(r.created_at)}</span>
+                <span>{fmtTime(r.created_at, t)}</span>
                 <span>·</span>
-                <span>composite {r.composite_score}/100</span>
+                <span>{t("composite")} {r.composite_score}/100</span>
               </div>
             </div>
-            <span className={clsx("chip", tone(r.short_label))}>{toneLabel(r.short_label)}</span>
+            <span className={clsx("chip", tone(r.short_label))}>{toneLabel(r.short_label, t)}</span>
           </button>
         ))}
       </div>

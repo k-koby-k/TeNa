@@ -39,12 +39,12 @@ const BANKER_EXTRA_NAV: { icon: any; label: ViewKey }[] = [
 const dot = (label: string) =>
   label === "YES" ? "bg-emerald" : label === "MAYBE" ? "bg-amber" : "bg-rose-500";
 
-const relTime = (iso: string) => {
+const relTime = (iso: string, t: (key: string) => string) => {
   const dt = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (dt < 60) return "now";
-  if (dt < 3600) return `${Math.round(dt / 60)}m`;
-  if (dt < 86400) return `${Math.round(dt / 3600)}h`;
-  return `${Math.round(dt / 86400)}d`;
+  if (dt < 60) return t("now");
+  if (dt < 3600) return `${Math.round(dt / 60)}${t("m")}`;
+  if (dt < 86400) return `${Math.round(dt / 3600)}${t("h")}`;
+  return `${Math.round(dt / 86400)}${t("d")}`;
 };
 
 export function Sidebar({
@@ -146,7 +146,7 @@ export function Sidebar({
                   isActive && "nav-item-active",
                   locked && !isActive && "opacity-50 cursor-not-allowed",
                 )}
-                title={locked ? "Complete the previous step first" : undefined}
+                title={locked ? t("Complete the previous step first") : undefined}
               >
                 <n.icon size={16} />
                 <span className="flex-1">{n.label === "Queue" ? t("Deal Pipeline") : t(n.label)}</span>
@@ -155,7 +155,7 @@ export function Sidebar({
                   : done
                     ? <CheckIcon size={12} className={isActive ? "text-white/80" : "text-emerald"} />
                     : isActive
-                      ? <span className="chip bg-emerald/15 text-emerald">LIVE</span>
+                      ? <span className="chip bg-emerald/15 text-emerald">{t("LIVE")}</span>
                       : null}
               </button>
             );
@@ -178,7 +178,7 @@ export function Sidebar({
                   >
                     <n.icon size={16} />
                     <span className="flex-1">{t("Deal Pipeline")}</span>
-                    {isActive && <span className="chip bg-emerald/15 text-emerald">LIVE</span>}
+                    {isActive && <span className="chip bg-emerald/15 text-emerald">{t("LIVE")}</span>}
                   </button>
                 );
               })}
@@ -219,7 +219,7 @@ export function Sidebar({
                   <div className="text-[13px] text-navy font-medium truncate">{r.business_type}</div>
                   <div className="text-[11px] text-muted truncate">{r.location.split(",")[0]} · {r.composite_score}/100</div>
                 </div>
-                <span className="text-[10px] text-muted shrink-0">{relTime(r.created_at)}</span>
+                <span className="text-[10px] text-muted shrink-0">{relTime(r.created_at, t)}</span>
               </button>
             );
           })}

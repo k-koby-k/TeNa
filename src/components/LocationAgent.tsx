@@ -101,8 +101,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
             <div className="label">{t("Step 2 · Location & site")}</div>
             <h1 className="font-display text-xl text-navy font-bold">{t("Where will it open?")}</h1>
             <p className="text-sm text-muted mt-0.5">
-              Search or click the map to pin the candidate site, then add the lease facts you know.
-              The Location agent will run from the Overview to fetch real competitors and synthesise the score.
+              {t("Search or click the map to pin the candidate site, then add the lease facts you know. The Location agent will run from the Overview to fetch real competitors and synthesise the score.")}
             </p>
           </div>
         </div>
@@ -119,7 +118,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
             <div className="relative">
               <input
                 className="input pl-3 pr-9 text-[14px]"
-                placeholder="Type a place name — 'Magic City', 'Chilonzor metro', 'Mustaqillik'…"
+                placeholder={t("Type a place name — 'Magic City', 'Chilonzor metro', 'Mustaqillik'…")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => hits.length && setSearchOpen(true)}
@@ -152,7 +151,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
               )}
             </div>
             <div className="text-[11px] text-muted mt-2">
-              Pick from the results, or click anywhere on the map below to drop a pin manually.
+              {t("Pick from the results, or click anywhere on the map below to drop a pin manually.")}
             </div>
           </div>
 
@@ -161,12 +160,12 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
             <div className="px-4 py-3 border-t border-line flex items-center justify-between text-[12px]">
               <div className="flex items-center gap-2 text-muted">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-petrol ring-2 ring-white" /> Site
+                  <span className="w-2.5 h-2.5 rounded-full bg-petrol ring-2 ring-white" /> {t("Site")}
                 </span>
-                <span>· 500 m solid · 1 km dashed</span>
+                <span>{t("· 500 m solid · 1 km dashed")}</span>
               </div>
               <div className="text-navy font-mono text-[11px]">
-                {coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : "click map or search to pin"}
+                {coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : t("click map or search to pin")}
               </div>
             </div>
           </div>
@@ -175,24 +174,24 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
         {/* Site facts */}
         <div className="card p-5 space-y-4">
           <div className="label">{t("Site facts")}</div>
-          <Field label={t("Site size")} hint="sqm">
-            <input className="input" placeholder="e.g. 75"
+          <Field label={t("Site size")} hint={t("sqm")}>
+            <input className="input" placeholder={t("e.g. 75")}
               value={inputs.site_size_sqm || ""}
               onChange={(e) => setInput("site_size_sqm", Number(e.target.value) || 0)} />
           </Field>
           <Field label={t("Monthly rent")} hint="UZS">
-            <input className="input" placeholder="e.g. 14 000 000"
+            <input className="input" placeholder={t("e.g. 14 000 000")}
               value={inputs.monthly_rent_uzs ? inputs.monthly_rent_uzs.toLocaleString("en-US").replace(/,/g, " ") : ""}
               onChange={(e) => setInput("monthly_rent_uzs", Number(e.target.value.replace(/[^\d]/g, "")) || 0)} />
           </Field>
-          <Field label={t("Lease term")} hint="months">
+          <Field label={t("Lease term")} hint={t("months")}>
             <Seg
               options={["6", "12", "24", "36", "60"]}
               value={String(inputs.lease_term_months || 12)}
               onChange={(v) => setInput("lease_term_months", Number(v))}
             />
           </Field>
-          <Field label={t("Rent deposit")} hint="months">
+          <Field label={t("Rent deposit")} hint={t("months")}>
             <Seg
               options={["0", "1", "2", "3"]}
               value={String(inputs.rent_deposit_months ?? 0)}
@@ -203,22 +202,22 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
             <select className="input"
               value={inputs.operating_hours}
               onChange={(e) => setInput("operating_hours", e.target.value as any)}>
-              <option value="">Select…</option>
-              <option value="short">Short (≤ 8h)</option>
-              <option value="standard">Standard (8–12h)</option>
-              <option value="long">Long (12–18h)</option>
-              <option value="24h">24 hours</option>
+              <option value="">{t("Select…")}</option>
+              <option value="short">{t("Short (≤ 8h)")}</option>
+              <option value="standard">{t("Standard (8–12h)")}</option>
+              <option value="long">{t("Long (12–18h)")}</option>
+              <option value="24h">{t("24 hours")}</option>
             </select>
           </Field>
-          <Field label={t("Site type")} hint="affects visibility">
+          <Field label={t("Site type")} hint={t("affects visibility")}>
             <select className="input"
               value={inputs.site_type}
               onChange={(e) => setInput("site_type", e.target.value as any)}>
-              <option value="">Select…</option>
-              <option value="street_front">Street-front</option>
-              <option value="inside_building">Inside an office building</option>
-              <option value="mall">Mall / shopping centre</option>
-              <option value="basement">Basement / underground</option>
+              <option value="">{t("Select…")}</option>
+              <option value="street_front">{t("Street-front")}</option>
+              <option value="inside_building">{t("Inside an office building")}</option>
+              <option value="mall">{t("Mall / shopping centre")}</option>
+              <option value="basement">{t("Basement / underground")}</option>
             </select>
           </Field>
           <Field label={t("Parking nearby")}>
@@ -228,7 +227,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
           </Field>
           <div className="flex items-start gap-1.5 text-[11px] text-muted">
             <Info size={11} className="mt-0.5 shrink-0" />
-            All site facts are optional but improve the agent's score.
+            {t("All site facts are optional but improve the agent's score.")}
           </div>
         </div>
       </div>
@@ -256,8 +255,8 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
         active="Location"
         onChange={onChange}
         currentDone={ready}
-        doneHint="Pin a site on the map to continue."
-        nextHint="Site captured. Next: tell the Market agent your commercial plan."
+        doneHint={t("Pin a site on the map to continue.")}
+        nextHint={t("Site captured. Next: tell the Market agent your commercial plan.")}
       />
     </div>
   );
@@ -275,11 +274,12 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 function Seg({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  const t = useT();
   return (
     <div className="seg">
       {options.map((o) => (
         <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>
-          {o}
+          {t(o)}
         </div>
       ))}
     </div>

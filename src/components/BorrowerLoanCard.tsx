@@ -53,9 +53,9 @@ export function BorrowerCard() {
       <dl className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-2.5">
         <Row k={t("Stage")}             v={cap(inputs.stage) || "—"} />
         <Row k={t("Owner experience")}  v={cap(inputs.owner_experience) || "—"} />
-        <Row k={t("Years in industry")} v={inputs.years_in_industry ? `${inputs.years_in_industry}y` : "—"} />
-        <Row k={t("Legal entity")}      v={legalLabel(inputs.legal_entity)} />
-        <Row k={t("Prior businesses")}  v={`${inputs.prior_businesses_count} (${inputs.prior_business_failures} failed)`} />
+        <Row k={t("Years in industry")} v={inputs.years_in_industry ? `${inputs.years_in_industry}${t("y")}` : "—"} />
+        <Row k={t("Legal entity")}      v={legalLabel(inputs.legal_entity, t)} />
+        <Row k={t("Prior businesses")}  v={`${inputs.prior_businesses_count} (${inputs.prior_business_failures} ${t("failed")})`} />
         <Row k={t("Planned headcount")} v={inputs.has_employees_planned ? `${inputs.has_employees_planned}` : "—"} />
         <Row k={t("Dependents")}        v={inputs.dependents_count ? `${inputs.dependents_count}` : "—"} />
         <Row k={t("Co-signer")}         v={inputs.has_cosigner ? t("Yes") : t("No")} />
@@ -175,12 +175,12 @@ export function LoanCard() {
 }
 
 const cap = (s: string) => s ? s[0].toUpperCase() + s.slice(1) : "";
-const legalLabel = (e: string) => ({
+const legalLabel = (e: string, t: (key: string) => string) => t(({
   unregistered: "Unregistered",
   sole_prop: "Sole proprietor",
   llc: "LLC",
   joint_stock: "Joint-stock",
-} as Record<string, string>)[e] || "—";
+} as Record<string, string>)[e] || "—");
 
 // Stacked label-over-value — used inside the borrower detail grid.
 function Row({ k, v, tone }: { k: string; v: ReactNode; tone?: "good" | "warn" | "bad" }) {

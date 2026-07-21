@@ -68,7 +68,7 @@ function RecHeader() {
               const url = window.location.href;
               navigator.clipboard?.writeText(url);
             }}
-            title="Copy link to this scenario"
+            title={t("Copy link to this scenario")}
             className="px-3 py-2 text-xs font-medium border border-line rounded-lg flex items-center gap-1.5 hover:bg-navy/5"
           >
             <Share2 size={14} /> {t("Share")}
@@ -136,7 +136,7 @@ function DemandCard() {
     <div className="card p-5 col-span-2">
       <div className="flex items-center justify-between">
         <div>
-          <div className="label">Demand · M-B1</div>
+          <div className="label">{t("Demand · M-B1")}</div>
           <div className="font-display font-bold text-navy">{t("12-month forecast")}</div>
         </div>
         <div className="seg w-44">
@@ -241,7 +241,7 @@ function BankActionCard() {
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div>
           <div className="label">{t("Product")}</div>
-          <div className="text-sm font-semibold text-navy mt-1">{bank.product}</div>
+          <div className="text-sm font-semibold text-navy mt-1">{t(bank.product)}</div>
         </div>
         <div>
           <div className="label">{t("Loan size")}</div>
@@ -305,7 +305,7 @@ function ScoreFormulaCard() {
             <div className="text-[11px] text-muted">{t("Final score")}</div>
             <div className="font-display font-bold text-2xl text-navy leading-none">{composite}<span className="text-base text-muted font-medium"> / 100</span></div>
           </div>
-          <span className={clsx("chip px-3 py-1 text-xs font-bold", verdictTone)}>{verdict.label}</span>
+          <span className={clsx("chip px-3 py-1 text-xs font-bold", verdictTone)}>{t(verdict.label)}</span>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-5 gap-2">
@@ -339,7 +339,7 @@ function ScoreFormulaCard() {
         })}
       </div>
       <div className="mt-3 text-[11px] text-muted flex items-center gap-3">
-        <span>≥70 → YES</span><span>50–69 → MAYBE</span><span>&lt;50 → NO</span>
+        <span>≥70 → {t("YES")}</span><span>50–69 → {t("MAYBE")}</span><span>&lt;50 → {t("NO")}</span>
         <span className="ml-auto">{t("Engine v1.4 · transparent linear policy")}</span>
       </div>
     </div>
@@ -368,14 +368,14 @@ function MarketSizeCard() {
             <div className="flex items-center justify-between text-[12px]">
               <span className="font-semibold text-navy flex items-center gap-2">
                 <span className={clsx("w-2 h-2 rounded-sm", palette[m.tier])} />
-                {m.tier} <span className="text-muted font-normal">· {m.label}</span>
+                {m.tier} <span className="text-muted font-normal">· {t(m.label)}</span>
               </span>
               <span className="font-display font-bold text-navy">{m.value}B</span>
             </div>
             <div className="mt-1 h-2 bg-navy/[0.05] rounded-full overflow-hidden">
               <div className={clsx("h-full rounded-full", palette[m.tier])} style={{ width: `${(m.value / max) * 100}%` }} />
             </div>
-            <div className="text-[10px] text-muted mt-0.5">{m.sub}</div>
+            <div className="text-[10px] text-muted mt-0.5">{t(m.sub)}</div>
           </div>
         ))}
       </div>

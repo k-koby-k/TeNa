@@ -133,8 +133,7 @@ export function BankerQueue({ onChange }: { onChange: (v: ViewKey) => void }) {
             <div className="label">{t("Bank sales · all analyzed businesses")}</div>
             <h1 className="font-display text-xl text-navy font-bold">{t("Deal Pipeline")}</h1>
             <p className="text-sm text-muted mt-0.5">
-              Loan-ready businesses from founders and partner analyses. Use this view to source
-              qualified SME borrowers for bank relationship managers.
+              {t("Loan-ready businesses from founders and partner analyses. Use this view to source qualified SME borrowers for bank relationship managers.")}
             </p>
           </div>
           <div className="flex items-center gap-2 text-[12px] text-muted">
@@ -214,7 +213,7 @@ export function BankerQueue({ onChange }: { onChange: (v: ViewKey) => void }) {
               </PanelSelect>
               <PanelSelect label={t("Business type")} value={businessType} onChange={setBusinessType}>
                 <option value="ALL">{t("All types")}</option>
-                {filterOptions.businessTypes.map((x) => <option key={x}>{x}</option>)}
+                {filterOptions.businessTypes.map((x) => <option key={x} value={x}>{t(x)}</option>)}
               </PanelSelect>
               <PanelSelect label={t("District")} value={district} onChange={setDistrict}>
                 <option value="ALL">{t("All districts")}</option>
@@ -231,14 +230,14 @@ export function BankerQueue({ onChange }: { onChange: (v: ViewKey) => void }) {
         )}
 
         <div className="mt-3 flex items-center gap-2 text-[11px] text-muted">
-          <span>{items ? `${visible.length} of ${items.length} deals` : "—"}</span>
+          <span>{items ? `${visible.length} ${t("of")} ${items.length} ${t("deals")}` : "—"}</span>
           {hasFilters && (
             <div className="flex flex-wrap gap-1.5">
-            {bucket !== "ALL" && <ActiveTag onClear={() => setBucket("ALL")}>{bucketLabel(bucket)}</ActiveTag>}
-            {source !== "ALL" && <ActiveTag onClear={() => setSource("ALL")}>{source === "own" ? "My analyses" : "Marketplace"}</ActiveTag>}
-            {businessType !== "ALL" && <ActiveTag onClear={() => setBusinessType("ALL")}>{businessType}</ActiveTag>}
+            {bucket !== "ALL" && <ActiveTag onClear={() => setBucket("ALL")}>{bucketLabel(bucket, t)}</ActiveTag>}
+            {source !== "ALL" && <ActiveTag onClear={() => setSource("ALL")}>{source === "own" ? t("My analyses") : t("Marketplace")}</ActiveTag>}
+            {businessType !== "ALL" && <ActiveTag onClear={() => setBusinessType("ALL")}>{t(businessType)}</ActiveTag>}
             {district !== "ALL" && <ActiveTag onClear={() => setDistrict("ALL")}>{district}</ActiveTag>}
-            {band !== "ALL" && <ActiveTag onClear={() => setBand("ALL")}>{bandLabel(band)}</ActiveTag>}
+            {band !== "ALL" && <ActiveTag onClear={() => setBand("ALL")}>{bandLabel(band, t)}</ActiveTag>}
             </div>
           )}
         </div>
@@ -255,15 +254,15 @@ export function BankerQueue({ onChange }: { onChange: (v: ViewKey) => void }) {
         <div className="card p-0 overflow-x-auto">
           {/* Column header */}
           <div className="min-w-[1040px] grid grid-cols-[80px_1.4fr_1fr_110px_120px_120px_130px_90px] gap-3 px-5 py-2.5 bg-navy/[0.03] border-b border-line text-[10px] uppercase tracking-wider text-muted font-semibold">
-            <span>Rec.</span>
-            <span>Business</span>
-            <span>Location</span>
+            <span>{t("Rec.")}</span>
+            <span>{t("Business")}</span>
+            <span>{t("Location")}</span>
             <button onClick={() => setSort(sort === "SCORE_DESC" ? "SCORE_ASC" : "SCORE_DESC")} className="flex items-center gap-1 hover:text-navy">
-              Composite <ArrowDownUp size={10} />
+              {t("Composite")} <ArrowDownUp size={10} />
             </button>
-            <span>Sub-scores</span>
-            <span>Source</span>
-            <span>Submitted</span>
+            <span>{t("Sub-scores")}</span>
+            <span>{t("Source")}</span>
+            <span>{t("Submitted")}</span>
             <span></span>
           </div>
           {visible.map((r) => (
@@ -277,19 +276,19 @@ export function BankerQueue({ onChange }: { onChange: (v: ViewKey) => void }) {
         <KpiCard
           icon={TrendingUp} title={t("Auto-approve rate")}
           value={items ? `${Math.round((counts.YES / Math.max(1, counts.ALL)) * 100)}%` : "—"}
-          sub={`${counts.YES} of ${counts.ALL} flagged for launch`}
+          sub={`${counts.YES} ${t("of")} ${counts.ALL} ${t("flagged for launch")}`}
           tone="emerald"
         />
         <KpiCard
           icon={AlertTriangle} title={t("Conditions required")}
           value={items ? String(counts.MAYBE) : "—"}
-          sub="Borderline — relationship-manager call"
+          sub={t("Borderline — relationship-manager call")}
           tone="amber"
         />
         <KpiCard
           icon={ShieldCheck} title={t("Avoided risk")}
           value={items ? String(counts.NO) : "—"}
-          sub="TeNa flagged before disbursement"
+          sub={t("TeNa flagged before disbursement")}
           tone="rose"
         />
       </div>
@@ -357,31 +356,32 @@ function ActiveTag({ children, onClear }: { children: ReactNode; onClear: () => 
   );
 }
 
-function bandLabel(band: ScoreBand) {
-  if (band === "HIGH") return "70+";
-  if (band === "MEDIUM") return "50-69";
-  if (band === "LOW") return "<50";
-  return "Any";
+function bandLabel(band: ScoreBand, t: (key: string) => string) {
+  if (band === "HIGH") return t("70+");
+  if (band === "MEDIUM") return t("50-69");
+  if (band === "LOW") return t("<50");
+  return t("Any");
 }
 
-function bucketLabel(bucket: Bucket) {
-  if (bucket === "YES") return "Ready";
-  if (bucket === "MAYBE") return "Conditional";
-  if (bucket === "NO") return "Decline";
-  return "All";
+function bucketLabel(bucket: Bucket, t: (key: string) => string) {
+  if (bucket === "YES") return t("Ready");
+  if (bucket === "MAYBE") return t("Conditional");
+  if (bucket === "NO") return t("Decline");
+  return t("All");
 }
 
 function QueueRow({
   item, opening, onOpen,
 }: { item: HistoryItem; opening: boolean; onOpen: () => void }) {
+  const t = useT();
   const tone =
     item.short_label === "YES" ? "bg-emerald text-white"
   : item.short_label === "MAYBE" ? "bg-amber text-white"
   : "bg-rose-500 text-white";
   const label =
-    item.short_label === "YES" ? "Launch"
-  : item.short_label === "MAYBE" ? "Caution"
-  : "Decline";
+    item.short_label === "YES" ? t("Launch")
+  : item.short_label === "MAYBE" ? t("Caution")
+  : t("Decline");
 
   // Crude sub-scores derived from the composite + label so the queue row has
   // a quick at-a-glance feel. The full breakdown lives in Overview.
@@ -422,12 +422,12 @@ function QueueRow({
           "chip text-[10px]",
           item.source === "own" ? "bg-petrol/10 text-petrol" : "bg-navy/5 text-navy",
         )}>
-          {item.source === "own" ? "My analysis" : "Marketplace"}
+          {item.source === "own" ? t("My analysis") : t("Marketplace")}
         </div>
         <div className="text-[10px] text-muted truncate mt-0.5">{item.submitted_by ?? "TeNa"}</div>
       </div>
 
-      <span className="text-[11px] text-muted">{relTime(item.created_at)}</span>
+      <span className="text-[11px] text-muted">{relTime(item.created_at, t)}</span>
 
       <div className="flex items-center justify-end gap-1.5">
         <span
@@ -441,9 +441,9 @@ function QueueRow({
             "inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded",
             item.contact_phone ? "text-petrol hover:bg-petrol/10" : "text-muted opacity-50",
           )}
-          title={item.contact_phone ? `Call ${item.contact_name ?? "owner"} · ${item.contact_phone}` : "No contact number"}
+          title={item.contact_phone ? `${t("Call")} ${item.contact_name ?? t("owner")} · ${item.contact_phone}` : t("No contact number")}
         >
-          <Phone size={11} /> Call
+          <Phone size={11} /> {t("Call")}
         </span>
         {opening
           ? <Loader2 size={14} className="animate-spin text-petrol" />
@@ -504,10 +504,10 @@ function KpiCard({
   );
 }
 
-function relTime(iso: string): string {
+function relTime(iso: string, t: (key: string) => string): string {
   const dt = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (dt < 60)    return "just now";
-  if (dt < 3600)  return `${Math.round(dt / 60)} min ago`;
-  if (dt < 86400) return `${Math.round(dt / 3600)} h ago`;
-  return `${Math.round(dt / 86400)} d ago`;
+  if (dt < 60)    return t("just now");
+  if (dt < 3600)  return `${Math.round(dt / 60)} ${t("min ago")}`;
+  if (dt < 86400) return `${Math.round(dt / 3600)} ${t("h ago")}`;
+  return `${Math.round(dt / 86400)} ${t("d ago")}`;
 }

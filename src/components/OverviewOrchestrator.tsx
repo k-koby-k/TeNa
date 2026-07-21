@@ -217,7 +217,7 @@ export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: Reac
       }
     } else {
       saveToHistory(nextResult, { location: locR.status === "fulfilled" ? locR.value : null });
-      setRun((s) => ({ ...s, synthesis: { status: "error", error: "Skipped — one or more upstream agents failed" } }));
+      setRun((s) => ({ ...s, synthesis: { status: "error", error: t("Skipped — one or more upstream agents failed") } }));
     }
   }
 
@@ -267,8 +267,8 @@ export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: Reac
             </h2>
             <p className="text-[12px] text-muted mt-0.5">
               {hasResults
-                ? "Agents auto-ran when you opened this view. Adjust inputs and re-run for a refreshed verdict."
-                : "Location, Market and Financials run in parallel, then Synthesis combines them. Typical total time ≈ 15–30 seconds."}
+                ? t("Agents auto-ran when you opened this view. Adjust inputs and re-run for a refreshed verdict.")
+                : t("Location, Market and Financials run in parallel, then Synthesis combines them. Typical total time ≈ 15–30 seconds.")}
             </p>
           </div>
           <button
@@ -413,7 +413,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
         html: `<div style="width:18px;height:18px;border-radius:50%;background:#1B4965;box-shadow:0 0 0 3px white,0 2px 6px rgba(0,0,0,.3);"></div>`,
         iconSize: [18, 18], iconAnchor: [9, 9],
       }),
-    }).bindPopup("<b>Selected site</b>").addTo(map);
+    }).bindPopup(`<b>${t("Selected site")}</b>`).addTo(map);
     map.setView(pin, map.getZoom() < 14 ? 15 : map.getZoom());
   }, [pin[0], pin[1]]);
 
@@ -431,7 +431,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
           html: `<div style="width:10px;height:10px;border-radius:50%;background:#E0A800;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>`,
           iconSize: [10, 10], iconAnchor: [5, 5],
         }),
-      }).bindPopup(`<b>${c.name ?? "(unnamed)"}</b><br>${c.kind} · ${c.distance_m}m`).addTo(layer);
+      }).bindPopup(`<b>${c.name ?? t("(unnamed)")}</b><br>${c.kind} · ${c.distance_m}m`).addTo(layer);
     }
     for (const a of r.anchors) {
       const cc = a.type === "transit" ? "#10B981"
@@ -445,7 +445,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
           html: `<div style="width:8px;height:8px;border-radius:2px;background:${cc};border:1.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>`,
           iconSize: [8, 8], iconAnchor: [4, 4],
         }),
-      }).bindPopup(`<b>${a.name ?? "(unnamed)"}</b><br>${a.type} · ${a.distance_m}m`).addTo(layer);
+      }).bindPopup(`<b>${a.name ?? t("(unnamed)")}</b><br>${a.type} · ${a.distance_m}m`).addTo(layer);
     }
   }, [r]);
 
@@ -619,7 +619,7 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
               <li key={i} className="py-1.5 flex items-center gap-2 text-[12.5px]">
                 <span className="w-2 h-2 rounded-full bg-amber shrink-0" />
                 <span className="flex-1 min-w-0 truncate text-navy font-medium">
-                  {c.name ?? "(unnamed)"}
+                  {c.name ?? t("(unnamed)")}
                 </span>
                 <span className="text-muted text-[11px] truncate max-w-[110px]">{c.kind}</span>
                 <span className="font-mono text-navy text-[11px] w-12 text-right">{c.distance_m}m</span>
@@ -649,7 +649,7 @@ function AnalysisPanel({ r }: { r: LocationAgentResult }) {
                 <li key={i} className="py-1.5 flex items-center gap-2 text-[12.5px]">
                   <span className={clsx("w-2 h-2 rounded-sm shrink-0", tone)} />
                   <span className="flex-1 min-w-0 truncate text-navy font-medium">
-                    {a.name ?? "(unnamed)"}
+                    {a.name ?? t("(unnamed)")}
                   </span>
                   <span className="text-muted text-[11px]">{a.type}</span>
                   <span className="font-mono text-navy text-[11px] w-12 text-right">{a.distance_m}m</span>

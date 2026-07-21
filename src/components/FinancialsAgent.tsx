@@ -40,8 +40,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
             <div className="label">{t("Step 4 · Financials & lending")}</div>
             <h1 className="font-display text-xl text-navy font-bold">{t("Capital, collateral and risk")}</h1>
             <p className="text-sm text-muted mt-0.5">
-              The same questions a credit officer would ask. The viability agent reads all of this
-              from the Overview and produces breakeven, ROI, DTI and a recommended product.
+              {t("The same questions a credit officer would ask. The viability agent reads all of this from the Overview and produces breakeven, ROI, DTI and a recommended product.")}
             </p>
           </div>
         </div>
@@ -50,32 +49,32 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       {/* Captured-so-far recap */}
       <div className="card p-4 bg-navy/[0.02]">
         <div className="grid grid-cols-4 gap-4 text-[12px]">
-          <Recap k="Monthly rent"   v={inputs.monthly_rent_uzs ? `${(inputs.monthly_rent_uzs/1_000_000).toFixed(1)}M UZS` : "—"} from="Location" />
-          <Recap k="Avg ticket"     v={inputs.average_ticket_uzs ? `${fmt(inputs.average_ticket_uzs)} UZS` : "—"} from="Market" />
-          <Recap k="Customers/day"  v={inputs.customers_per_day ? String(inputs.customers_per_day) : "—"} from="Market" />
-          <Recap k="Site size"      v={inputs.site_size_sqm ? `${inputs.site_size_sqm} sqm` : "—"} from="Location" />
+          <Recap k={t("Monthly rent")}   v={inputs.monthly_rent_uzs ? `${(inputs.monthly_rent_uzs/1_000_000).toFixed(1)}M UZS` : "—"} from={t("Location")} />
+          <Recap k={t("Avg ticket")}     v={inputs.average_ticket_uzs ? `${fmt(inputs.average_ticket_uzs)} UZS` : "—"} from={t("Market")} />
+          <Recap k={t("Customers/day")}  v={inputs.customers_per_day ? String(inputs.customers_per_day) : "—"} from={t("Market")} />
+          <Recap k={t("Site size")}      v={inputs.site_size_sqm ? `${inputs.site_size_sqm} sqm` : "—"} from={t("Location")} />
         </div>
       </div>
 
       {/* Section 1: Capital + use of funds */}
-      <Section title={t("Capital structure & use of funds")} subtitle="How much, from where, spent on what.">
+      <Section title={t("Capital structure & use of funds")} subtitle={t("How much, from where, spent on what.")}>
         <div className="grid grid-cols-2 gap-5">
-          <Field label={t("Founder capital injection")} hint="UZS · what you put in" req>
-            <input className="input" placeholder="e.g. 180 000 000"
+          <Field label={t("Founder capital injection")} hint={t("UZS · what you put in")} req>
+            <input className="input" placeholder={t("e.g. 180 000 000")}
               value={fmt(inputs.budget_uzs)}
               onChange={(e) => setInput("budget_uzs", parse(e.target.value))} />
           </Field>
-          <Field label={t("Loan amount requested")} hint="UZS · 0 if no loan" req>
-            <input className="input" placeholder="e.g. 120 000 000"
+          <Field label={t("Loan amount requested")} hint={t("UZS · 0 if no loan")} req>
+            <input className="input" placeholder={t("e.g. 120 000 000")}
               value={fmt(inputs.loan_uzs)}
               onChange={(e) => setInput("loan_uzs", parse(e.target.value))} />
           </Field>
-          <Field label={t("Repayment horizon")} hint="months">
+          <Field label={t("Repayment horizon")} hint={t("months")}>
             <Seg options={["12","24","36","48","60"]}
               value={String(inputs.repayment_months)}
               onChange={(v) => setInput("repayment_months", Number(v))} />
           </Field>
-          <Field label={t("Grace period")} hint="months without principal repayment">
+          <Field label={t("Grace period")} hint={t("months without principal repayment")}>
             <Seg options={["0","1","3","6"]}
               value={String(inputs.grace_period_months)}
               onChange={(v) => setInput("grace_period_months", Number(v))} />
@@ -91,7 +90,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
           <div className="flex items-end justify-between mb-3 gap-3">
             <div>
               <div className="label">{t("Use of funds breakdown")}</div>
-              <div className="text-[11px] text-muted">How the total capital (founder + loan) is spent. Type % directly.</div>
+              <div className="text-[11px] text-muted">{t("How the total capital (founder + loan) is spent. Type % directly.")}</div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -133,7 +132,7 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
           {/* Live stacked bar + total */}
           <div className="mt-4">
             <div className="flex items-center justify-between text-[11px] mb-1.5">
-              <span className="text-muted">Allocation preview</span>
+              <span className="text-muted">{t("Allocation preview")}</span>
               <span className={clsx(
                 "font-semibold",
                 useOfFundsTotal === 100 ? "text-emerald"
@@ -141,10 +140,10 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
                 : useOfFundsTotal === 0 ? "text-muted"
                 : "text-amber"
               )}>
-                {useOfFundsTotal === 100 ? "100% allocated"
-                  : useOfFundsTotal === 0 ? "0% allocated"
-                  : useOfFundsTotal > 100 ? `${useOfFundsTotal}% — ${useOfFundsTotal - 100}% over`
-                  : `${useOfFundsTotal}% — ${100 - useOfFundsTotal}% remaining`}
+                {useOfFundsTotal === 100 ? t("100% allocated")
+                  : useOfFundsTotal === 0 ? t("0% allocated")
+                  : useOfFundsTotal > 100 ? `${useOfFundsTotal}% — ${useOfFundsTotal - 100}% ${t("over")}`
+                  : `${useOfFundsTotal}% — ${100 - useOfFundsTotal}% ${t("remaining")}`}
               </span>
             </div>
             <div className="h-3 w-full rounded-full bg-navy/[0.05] overflow-hidden flex">
@@ -155,9 +154,9 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
               <Slice color="bg-rose-400" pct={inputs.use_marketing_pct} />
             </div>
             <div className="mt-1 text-[10px] text-muted">
-              Capital base: {fmt(inputs.budget_uzs + inputs.loan_uzs)} UZS
+              {t("Capital base")}: {fmt(inputs.budget_uzs + inputs.loan_uzs)} UZS
               {(inputs.budget_uzs + inputs.loan_uzs) > 0 && useOfFundsTotal > 0 && (
-                <> · ≈ {fmt(Math.round((inputs.budget_uzs + inputs.loan_uzs) * useOfFundsTotal / 100))} UZS allocated</>
+                <> · ≈ {fmt(Math.round((inputs.budget_uzs + inputs.loan_uzs) * useOfFundsTotal / 100))} UZS {t("allocated")}</>
               )}
             </div>
           </div>
@@ -165,34 +164,34 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 2: Collateral & guarantor */}
-      <Section title={t("Collateral & guarantor")} subtitle="What secures the loan.">
+      <Section title={t("Collateral & guarantor")} subtitle={t("What secures the loan.")}>
         <div className="grid grid-cols-2 gap-5">
-          <Field label="Collateral type">
+          <Field label={t("Collateral type")}>
             <select className="input"
               value={inputs.collateral_type}
               onChange={(e) => setInput("collateral_type", e.target.value as any)}>
-              <option value="">Select…</option>
-              <option value="none">None</option>
-              <option value="real_estate">Real estate</option>
-              <option value="vehicle">Vehicle</option>
-              <option value="equipment">Equipment</option>
-              <option value="deposit">Cash deposit</option>
+              <option value="">{t("Select…")}</option>
+              <option value="none">{t("None")}</option>
+              <option value="real_estate">{t("Real estate")}</option>
+              <option value="vehicle">{t("Vehicle")}</option>
+              <option value="equipment">{t("Equipment")}</option>
+              <option value="deposit">{t("Cash deposit")}</option>
             </select>
           </Field>
-          <Field label="Collateral value" hint="UZS · only if applicable">
-            <input className="input" placeholder="e.g. 50 000 000"
+          <Field label={t("Collateral value")} hint={t("UZS · only if applicable")}>
+            <input className="input" placeholder={t("e.g. 50 000 000")}
               value={fmt(inputs.collateral_value_uzs)}
               onChange={(e) => setInput("collateral_value_uzs", parse(e.target.value))} />
           </Field>
-          <Field label="Already pledged elsewhere?">
+          <Field label={t("Already pledged elsewhere?")}>
             <YesNo value={inputs.collateral_pledged_elsewhere} onChange={(v) => setInput("collateral_pledged_elsewhere", v)} />
           </Field>
-          <Field label="Co-signer / guarantor">
+          <Field label={t("Co-signer / guarantor")}>
             <YesNo value={inputs.has_cosigner} onChange={(v) => setInput("has_cosigner", v)} />
           </Field>
           {inputs.has_cosigner && (
-            <Field label="Co-signer relationship" full>
-              <input className="input" placeholder="e.g. spouse, parent, business partner"
+            <Field label={t("Co-signer relationship")} full>
+              <input className="input" placeholder={t("e.g. spouse, parent, business partner")}
                 value={inputs.cosigner_relationship}
                 onChange={(e) => setInput("cosigner_relationship", e.target.value)} />
             </Field>
@@ -201,20 +200,20 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 3: Founder financial standing */}
-      <Section title={t("Personal financial standing")} subtitle="Used for debt-to-income.">
+      <Section title={t("Personal financial standing")} subtitle={t("Used for debt-to-income.")}>
         <div className="grid grid-cols-3 gap-5">
-          <Field label="Existing debts" hint="M UZS / month">
-            <input className="input" placeholder="e.g. 2"
+          <Field label={t("Existing debts")} hint={t("M UZS / month")}>
+            <input className="input" placeholder={t("e.g. 2")}
               value={inputs.existing_monthly_debts_m_uzs || ""}
               onChange={(e) => setInput("existing_monthly_debts_m_uzs", Number(e.target.value) || 0)} />
           </Field>
-          <Field label="Other monthly income" hint="M UZS · salary, rentals, etc.">
-            <input className="input" placeholder="e.g. 8"
+          <Field label={t("Other monthly income")} hint={t("M UZS · salary, rentals, etc.")}>
+            <input className="input" placeholder={t("e.g. 8")}
               value={inputs.other_monthly_income_m_uzs || ""}
               onChange={(e) => setInput("other_monthly_income_m_uzs", Number(e.target.value) || 0)} />
           </Field>
-          <Field label="Dependents" hint="people in the household">
-            <input className="input" placeholder="e.g. 2"
+          <Field label={t("Dependents")} hint={t("people in the household")}>
+            <input className="input" placeholder={t("e.g. 2")}
               value={inputs.dependents_count || ""}
               onChange={(e) => setInput("dependents_count", Number(e.target.value) || 0)} />
           </Field>
@@ -222,34 +221,34 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
       </Section>
 
       {/* Section 4: Risk acknowledgement */}
-      <Section title={t("Risk acknowledgement")} subtitle="What's the worst case, and how do you cover it?" tone="amber">
-        <Field label="Top risk you've identified" hint="in your own words" full>
+      <Section title={t("Risk acknowledgement")} subtitle={t("What's the worst case, and how do you cover it?")} tone="amber">
+        <Field label={t("Top risk you've identified")} hint={t("in your own words")} full>
           <textarea className="input min-h-[70px] text-[13px] leading-snug"
-            placeholder="e.g. Local saturation; weekend competition; supply-chain delays for premium beans"
+            placeholder={t("e.g. Local saturation; weekend competition; supply-chain delays for premium beans")}
             value={inputs.top_risk_self_identified}
             onChange={(e) => setInput("top_risk_self_identified", e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 gap-5 mt-4">
-          <Field label="Contingency runway" hint="months of personal funds if revenue misses">
+          <Field label={t("Contingency runway")} hint={t("months of personal funds if revenue misses")}>
             <Seg options={["0","1","3","6","12"]}
               value={String(inputs.contingency_runway_months)}
               onChange={(v) => setInput("contingency_runway_months", Number(v))} />
           </Field>
-          <Field label="Business insurance planned?">
+          <Field label={t("Business insurance planned?")}>
             <YesNo value={inputs.business_insurance_planned} onChange={(v) => setInput("business_insurance_planned", v)} />
           </Field>
         </div>
       </Section>
 
       {/* Section 5: Operating economics */}
-      <Section title={t("Operating economics")} subtitle="Run-rate costs the agent can't infer.">
+      <Section title={t("Operating economics")} subtitle={t("Run-rate costs the agent can't infer.")}>
         <div className="grid grid-cols-2 gap-5">
-          <Field label="Other monthly costs" hint="M UZS · utilities, software, accounting, cleaning">
-            <input className="input" placeholder="e.g. 6"
+          <Field label={t("Other monthly costs")} hint={t("M UZS · utilities, software, accounting, cleaning")}>
+            <input className="input" placeholder={t("e.g. 6")}
               value={inputs.other_monthly_costs_m_uzs || ""}
               onChange={(e) => setInput("other_monthly_costs_m_uzs", Number(e.target.value) || 0)} />
           </Field>
-          <Field label="Revenue ramp" hint="months until full capacity">
+          <Field label={t("Revenue ramp")} hint={t("months until full capacity")}>
             <Seg options={["1","3","6","12"]}
               value={String(inputs.revenue_ramp_months || 3)}
               onChange={(v) => setInput("revenue_ramp_months", Number(v))} />
@@ -261,8 +260,8 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
         active="Financials"
         onChange={onChange}
         currentDone={ready}
-        doneHint="Provide founder capital, loan amount, and monthly rent to continue."
-        nextHint="All inputs captured. Open the Overview to run the full agentic analysis."
+        doneHint={t("Provide founder capital, loan amount, and monthly rent to continue.")}
+        nextHint={t("All inputs captured. Open the Overview to run the full agentic analysis.")}
       />
     </div>
   );
@@ -304,19 +303,21 @@ function Field({ label, hint, req, full, children }: { label: string; hint?: str
 }
 
 function Seg({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  const t = useT();
   return (
     <div className="seg">
       {options.map((o) => (
-        <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>{o}</div>
+        <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>{t(o)}</div>
       ))}
     </div>
   );
 }
 function YesNo({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  const t = useT();
   return (
     <div className="seg">
-      <div className={clsx("seg-btn", !value && "seg-btn-active")} onClick={() => onChange(false)}>No</div>
-      <div className={clsx("seg-btn",  value && "seg-btn-active")} onClick={() => onChange(true)}>Yes</div>
+      <div className={clsx("seg-btn", !value && "seg-btn-active")} onClick={() => onChange(false)}>{t("No")}</div>
+      <div className={clsx("seg-btn",  value && "seg-btn-active")} onClick={() => onChange(true)}>{t("Yes")}</div>
     </div>
   );
 }

@@ -410,6 +410,303 @@ const DICT: Record<string, { uz: string }> = {
   "Run the analysis above and this panel will show real competitors, anchors and the agent's reasoning for the location score.":
                                           { uz: "Yuqorida tahlilni ishga tushiring va bu panel haqiqiy raqobatchilar, nuqtalar va joylashuv bahosi izohini ko'rsatadi." },
 
+  // === Explainability / History (CategoryView) ===
+  "Governance · agent registry":          { uz: "Boshqaruv · agentlar reestri" },
+  "Explainability & model metadata":      { uz: "Tushuntirish va model ma'lumotlari" },
+  "Every agent that ran for the current scenario, with its version, confidence and model lineage. Confidence of 0 means the agent was not invoked yet.":
+                                          { uz: "Joriy stsenariy uchun ishlagan har bir agent, uning versiyasi, ishonch darajasi va model kelib chiqishi bilan ko'rsatiladi. Ishonch 0 bo'lsa, agent hali chaqirilmagan." },
+  "No analysis run yet — go to Overview and press":
+                                          { uz: "Hali tahlil ishlamagan — Umumiy ko'rinishga o'ting va bosing:" },
+  "Confidence":                           { uz: "Ishonch" },
+  "ran":                                  { uz: "ishladi" },
+  "Not invoked for this scenario":        { uz: "Bu stsenariy uchun chaqirilmagan" },
+  "Decision support · human-in-the-loop · audit log enabled · agents and the synthesis layer all run on Gemini 2.5 Flash with structured-output schemas.":
+                                          { uz: "Qaror qo'llab-quvvatlash · inson nazoratida · audit jurnali yoqilgan · agentlar va sintez qatlami Gemini 2.5 Flash asosida tuzilgan chiqish sxemalari bilan ishlaydi." },
+  "Not now":                              { uz: "Hozir emas" },
+  "Today":                                { uz: "Bugun" },
+  "Yesterday":                            { uz: "Kecha" },
+  "My workspace · analysis history":      { uz: "Mening ish maydonim · tahlillar tarixi" },
+  "My Analyses":                          { uz: "Mening tahlillarim" },
+  "My analyses":                          { uz: "Mening tahlillarim" },
+  "Scenarios analyzed by this account. The bank Deal Pipeline includes these plus businesses sourced from other founders and partners.":
+                                          { uz: "Ushbu hisob tomonidan tahlil qilingan stsenariylar. Bank bitimlar jarayoni bularga qo'shimcha, boshqa tadbirkorlar va hamkorlardan kelgan bizneslarni ham o'z ichiga oladi." },
+  "Search analyses…":                     { uz: "Tahlillarni qidirish..." },
+  "Sorted by most recent":                { uz: "Eng so'nggisi bo'yicha saralangan" },
+  "Failed to load history:":              { uz: "Tarixni yuklab bo'lmadi:" },
+  "Run your first analysis — it'll show up here.":
+                                          { uz: "Birinchi tahlilingizni ishga tushiring — u shu yerda paydo bo'ladi." },
+  "composite":                            { uz: "yig'ma" },
+
+  // === Sidebar ===
+  "Complete the previous step first":     { uz: "Avval oldingi qadamni yakunlang" },
+  "LIVE":                                 { uz: "JONLI" },
+  "now":                                  { uz: "hozir" },
+  "m":                                    { uz: "d" },
+  "h":                                    { uz: "s" },
+  "d":                                    { uz: "k" },
+
+  // === Profile setup — business types & extra copy ===
+  "Coffee shop":                          { uz: "Qahvaxona" },
+  "Restaurant":                           { uz: "Restoran" },
+  "Bakery":                               { uz: "Nonvoyxona" },
+  "Pharmacy":                             { uz: "Dorixona" },
+  "Beauty salon":                         { uz: "Go'zallik saloni" },
+  "Mini-market":                          { uz: "Mini-market" },
+  "Gym":                                  { uz: "Sport zali" },
+  "Dental clinic":                        { uz: "Stomatologiya klinikasi" },
+  "Pet shop":                             { uz: "Uy hayvonlari do'koni" },
+  "Bookstore":                            { uz: "Kitob do'koni" },
+  "Identity and concept only. The Location agent picks the district from your map pin. The clearer the description, the sharper the Market agent's TAM/SAM/SOM.":
+                                          { uz: "Faqat shaxsiy ma'lumot va kontseptsiya. Joylashuv agenti tumanni xarita belgisidan aniqlaydi. Tavsif qanchalik aniq bo'lsa, Bozor agentining TAM/SAM/SOM hisobi shunchalik aniq bo'ladi." },
+  "how it'll show up on the dashboard":   { uz: "boshqaruv panelida qanday ko'rinishi" },
+  "e.g. Black Bean Co.":                  { uz: "masalan, Black Bean Co." },
+  "Select type…":                         { uz: "Turni tanlang..." },
+  "positioning across the category":      { uz: "toifadagi pozitsiyalash" },
+  "1–4 sentences — niche, customer, what makes it different":
+                                          { uz: "1–4 gap — nisha, mijoz, nima bilan farq qiladi" },
+  "e.g. Premium specialty coffee shop targeting young professionals near a metro. On-site roasting, evening dessert pairings, work-friendly seating with fast wifi.":
+                                          { uz: "masalan, metro yaqinida yosh mutaxassislarga mo'ljallangan premium ixtisoslashgan qahvaxona. O'z joyida qovurish, kechki desert kombinatsiyalari, tez wifili qulay o'tirish joylari." },
+  "materially shifts credit risk":        { uz: "kredit xavfini sezilarli o'zgartiradi" },
+  "Fill the required fields to unlock the agents.":
+                                          { uz: "Agentlarni ochish uchun majburiy maydonlarni to'ldiring." },
+  "Pin the site on a real map; agent fetches competitors + anchors and derives the district.":
+                                          { uz: "Manzilni haqiqiy xaritada belgilang; agent raqobatchilar va diqqatga sazovor nuqtalarni olib, tumanni aniqlaydi." },
+  "Provide the commercial inputs (ticket, customers/day, reach) — agent sizes TAM/SAM/SOM.":
+                                          { uz: "Tijorat ma'lumotlarini kiriting (chek, kuniga mijozlar, qamrov) — agent TAM/SAM/SOM hajmini hisoblaydi." },
+  "Capital, loan and horizon — agent infers the rest from sector benchmarks.":
+                                          { uz: "Kapital, kredit va muddat — qolganini agent soha ko'rsatkichlaridan chiqaradi." },
+  "agent":                                { uz: "agenti" },
+  "File is over 20 MB.":                  { uz: "Fayl hajmi 20 MB dan katta." },
+  "Drop a PDF (deck, business plan, one-pager) and the agent pre-fills as much of the profile as it can. You can edit anything afterwards.":
+                                          { uz: "PDF (taqdimot, biznes-reja, bir sahifalik hujjat) tashlang va agent profilni imkon qadar oldindan to'ldiradi. Keyinchalik istalgan maydonni tahrirlashingiz mumkin." },
+  "…or drag-and-drop here · max 20 MB":   { uz: "...yoki shu yerga sudrab tashlang · maksimal 20 MB" },
+  "Reading":                              { uz: "O'qilmoqda:" },
+  "with Gemini…":                         { uz: "Gemini yordamida..." },
+  "try again":                            { uz: "qayta urinish" },
+  "Remove":                               { uz: "O'chirish" },
+  "field(s) pre-filled":                  { uz: "ta maydon oldindan to'ldirildi" },
+  "Edit any field below — the deck is just a starting point.":
+                                          { uz: "Quyidagi istalgan maydonni tahrirlang — hujjat faqat boshlang'ich nuqta." },
+  "Type":                                 { uz: "Turi" },
+  "Description":                          { uz: "Tavsif" },
+  "Audience":                             { uz: "Auditoriya" },
+  "Experience":                           { uz: "Tajriba" },
+  "Capital":                              { uz: "Kapital" },
+  "Rent":                                 { uz: "Ijara" },
+  "Loan":                                 { uz: "Kredit" },
+  "Avg ticket":                           { uz: "O'rtacha chek" },
+  "Fill business name, type, and concept description to continue.":
+                                          { uz: "Davom etish uchun biznes nomi, turi va kontseptsiya tavsifini to'ldiring." },
+  "Profile complete. Pin the site on a real map next.":
+                                          { uz: "Profil to'liq. Endi manzilni haqiqiy xaritada belgilang." },
+
+  // === Assistant chat — extra coverage ===
+  "Hi — I'm your **Business Case Assistant**. Type a question, or hit the mic and tell me about your business in Uzbek, Russian or English — I'll fill the form for you.":
+                                          { uz: "Salom — men sizning **Biznes case yordamchingizman**. Savol yozing yoki mikrofonni bosib, biznesingiz haqida o'zbek, rus yoki ingliz tilida gapiring — men shaklni siz uchun to'ldiraman." },
+  "Microphone API not available in this browser.":
+                                          { uz: "Ushbu brauzerda mikrofon API mavjud emas." },
+  "Microphone permission denied.":        { uz: "Mikrofonga ruxsat berilmadi." },
+  "(no speech detected — try again)":     { uz: "(nutq aniqlanmadi — qayta urinib ko'ring)" },
+  "Got it — captured":                    { uz: "Qabul qilindi — aniqlangan maydonlar soni:" },
+  "field(s)":                             { uz: "ta" },
+  "Got it, but I didn't catch any specific business details. Try repeating with more detail (business type, district, capital).":
+                                          { uz: "Qabul qilindi, lekin aniq biznes ma'lumotlarini ilg'ay olmadim. Ko'proq tafsilot bilan qayta gapirib ko'ring (biznes turi, tuman, kapital)." },
+  "Voice transcription failed:":          { uz: "Ovozni matnga aylantirish muvaffaqiyatsiz tugadi:" },
+  "Business Case Assistant":              { uz: "Biznes case yordamchisi" },
+  "Ask the AI · grounded in this analysis": { uz: "AI dan so'rang · shu tahlilga asoslangan" },
+  "loan":                                 { uz: "kredit" },
+  "6 flagship models":                    { uz: "6 ta yetakchi model" },
+  "No analysis yet — fill the form and recompute":
+                                          { uz: "Hali tahlil yo'q — shaklni to'ldiring va qayta hisoblang" },
+  "Why is the recommendation 'Proceed with caution'?":
+                                          { uz: "Nega tavsiya 'Ehtiyotkorlik bilan davom eting'?" },
+  "What are the biggest risks for this Chilonzor coffee shop?":
+                                          { uz: "Ushbu Chilonzordagi qahvaxona uchun eng katta xavflar qanday?" },
+  "How can I improve the credit readiness score?":
+                                          { uz: "Kredit tayyorligi bahosini qanday oshirsam bo'ladi?" },
+  "Compare Chilonzor vs Yunusobod for this concept.":
+                                          { uz: "Ushbu kontseptsiya uchun Chilonzor va Yunusobodni solishtiring." },
+  "name":                                 { uz: "ism" },
+  "type":                                 { uz: "turi" },
+  "format":                               { uz: "format" },
+  "stage":                                { uz: "bosqich" },
+  "description":                          { uz: "tavsif" },
+  "audience":                             { uz: "auditoriya" },
+  "experience":                           { uz: "tajriba" },
+  "district":                             { uz: "tuman" },
+  "niche":                                { uz: "nisha" },
+  "capital":                              { uz: "kapital" },
+  "rent":                                 { uz: "ijara" },
+  "ticket":                               { uz: "chek" },
+
+  // === Banker queue — extra coverage ===
+  "Loan-ready businesses from founders and partner analyses. Use this view to source qualified SME borrowers for bank relationship managers.":
+                                          { uz: "Tadbirkorlar va hamkorlar tahlillaridan kelib chiqqan kreditga tayyor bizneslar. Ushbu ko'rinishdan bank aloqalar menejerlari uchun malakali MSB qarz oluvchilarni tanlashda foydalaning." },
+  "All deals":                            { uz: "Barcha bitimlar" },
+  "Ready":                                { uz: "Tayyor" },
+  "Conditional":                          { uz: "Shartli" },
+  "Source":                               { uz: "Manba" },
+  "All sources":                          { uz: "Barcha manbalar" },
+  "Marketplace":                          { uz: "Bozor maydonchasi" },
+  "Any score":                            { uz: "Istalgan baho" },
+  "70+ strong":                           { uz: "70+ kuchli" },
+  "50-69 conditional":                    { uz: "50-69 shartli" },
+  "Below 50 decline":                     { uz: "50 dan past rad etish" },
+  "Sort":                                 { uz: "Saralash" },
+  "of":                                   { uz: "/" },
+  "deals":                                { uz: "bitim" },
+  "Rec.":                                 { uz: "Tavsiya" },
+  "Business":                             { uz: "Biznes" },
+  "Composite":                            { uz: "Yig'ma" },
+  "Sub-scores":                           { uz: "Kichik baholar" },
+  "Submitted":                            { uz: "Yuborilgan" },
+  "flagged for launch":                   { uz: "ishga tushirish uchun belgilangan" },
+  "Borderline — relationship-manager call": { uz: "Chegara holati — aloqalar menejeri qo'ng'irog'i kerak" },
+  "TeNa flagged before disbursement":     { uz: "TeNa mablag' berishdan oldin aniqladi" },
+  "My analysis":                          { uz: "Mening tahlilim" },
+  "owner":                                { uz: "egasi" },
+  "No contact number":                    { uz: "Kontakt raqami yo'q" },
+
+  // === Borrower/loan card — extra coverage ===
+  "y":                                    { uz: "yil" },
+  "failed":                               { uz: "muvaffaqiyatsiz" },
+  "Unregistered":                         { uz: "Ro'yxatdan o'tmagan" },
+  "Sole proprietor":                      { uz: "Yakka tartibdagi tadbirkor" },
+  "LLC":                                  { uz: "MChJ" },
+  "Joint-stock":                          { uz: "Aksiyadorlik jamiyati" },
+
+  // === Financials agent — extra coverage ===
+  "The same questions a credit officer would ask. The viability agent reads all of this from the Overview and produces breakeven, ROI, DTI and a recommended product.":
+                                          { uz: "Kredit ofitseri so'raydigan xuddi shu savollar. Hayotiylik agenti buning barchasini Umumiy ko'rinishdan o'qiydi va breakeven, ROI, DTI va tavsiya etilgan mahsulotni hisoblaydi." },
+  "How much, from where, spent on what.": { uz: "Qancha, qayerdan, nimaga sarflanadi." },
+  "UZS · what you put in":                { uz: "UZS · o'zingiz kiritgan mablag'" },
+  "UZS · 0 if no loan":                   { uz: "UZS · kredit bo'lmasa 0" },
+  "months without principal repayment":   { uz: "asosiy qarz to'lanmaydigan oylar" },
+  "How the total capital (founder + loan) is spent. Type % directly.":
+                                          { uz: "Jami kapital (asoschi + kredit) qanday sarflanishi. Foizni to'g'ridan-to'g'ri kiriting." },
+  "Allocation preview":                   { uz: "Taqsimot ko'rinishi" },
+  "0% allocated":                         { uz: "0% taqsimlangan" },
+  "over":                                 { uz: "ortiqcha" },
+  "remaining":                            { uz: "qoldi" },
+  "What secures the loan.":               { uz: "Kreditni nima ta'minlaydi." },
+  "UZS · only if applicable":             { uz: "UZS · agar mavjud bo'lsa" },
+  "Co-signer relationship":               { uz: "Kafil bilan munosabat" },
+  "e.g. spouse, parent, business partner": { uz: "masalan, turmush o'rtog'i, ota-ona, biznes hamkori" },
+  "Used for debt-to-income.":             { uz: "Qarz/daromad nisbati uchun ishlatiladi." },
+  "M UZS / month":                        { uz: "mln UZS / oy" },
+  "M UZS · salary, rentals, etc.":        { uz: "mln UZS · maosh, ijara va h.k." },
+  "people in the household":              { uz: "oiladagi jon soni" },
+  "What's the worst case, and how do you cover it?":
+                                          { uz: "Eng yomon holat qanday, va uni qanday qoplaysiz?" },
+  "in your own words":                    { uz: "o'z so'zlaringiz bilan" },
+  "e.g. Local saturation; weekend competition; supply-chain delays for premium beans":
+                                          { uz: "masalan, mahalliy to'yinganlik; dam olish kunlari raqobat; premium loviya yetkazib berishdagi kechikishlar" },
+  "months of personal funds if revenue misses":
+                                          { uz: "daromad kutilganidek bo'lmasa, shaxsiy mablag' yetadigan oylar" },
+  "Run-rate costs the agent can't infer.": { uz: "Agent chiqara olmaydigan joriy xarajatlar." },
+  "M UZS · utilities, software, accounting, cleaning":
+                                          { uz: "mln UZS · kommunal, dasturiy ta'minot, buxgalteriya, tozalash" },
+  "months until full capacity":           { uz: "to'liq quvvatgacha bo'lgan oylar" },
+  "Provide founder capital, loan amount, and monthly rent to continue.":
+                                          { uz: "Davom etish uchun asoschi kapitali, kredit miqdori va oylik ijarani kiriting." },
+  "All inputs captured. Open the Overview to run the full agentic analysis.":
+                                          { uz: "Barcha ma'lumotlar kiritildi. To'liq agentli tahlilni ishga tushirish uchun Umumiy ko'rinishni oching." },
+
+  // === Location agent — extra coverage ===
+  "Search or click the map to pin the candidate site, then add the lease facts you know. The Location agent will run from the Overview to fetch real competitors and synthesise the score.":
+                                          { uz: "Xarita orqali qidiring yoki bosing va nomzod manzilni belgilang, so'ng bilgan ijara ma'lumotlaringizni qo'shing. Joylashuv agenti Umumiy ko'rinishdan ishga tushib, haqiqiy raqobatchilarni oladi va bahoni hisoblaydi." },
+  "Type a place name — 'Magic City', 'Chilonzor metro', 'Mustaqillik'…":
+                                          { uz: "Joy nomini yozing — 'Magic City', 'Chilonzor metro', 'Mustaqillik'..." },
+  "Pick from the results, or click anywhere on the map below to drop a pin manually.":
+                                          { uz: "Natijalardan birini tanlang yoki quyidagi xaritada istalgan joyga bosib, belgi qo'ying." },
+  "· 500 m solid · 1 km dashed":          { uz: "· 500 m yaxlit · 1 km chiziqli" },
+  "click map or search to pin":           { uz: "belgilash uchun xaritani bosing yoki qidiring" },
+  "sqm":                                  { uz: "kv.m" },
+  "affects visibility":                   { uz: "ko'rinishga ta'sir qiladi" },
+  "Short (≤ 8h)":                         { uz: "Qisqa (≤ 8 soat)" },
+  "Standard (8–12h)":                     { uz: "Standart (8–12 soat)" },
+  "Long (12–18h)":                        { uz: "Uzun (12–18 soat)" },
+  "24 hours":                             { uz: "24 soat" },
+  "Street-front":                         { uz: "Ko'cha old tomoni" },
+  "Inside an office building":            { uz: "Ofis binosi ichida" },
+  "Mall / shopping centre":               { uz: "Savdo markazi" },
+  "Basement / underground":               { uz: "Yer osti / podval" },
+  "Limited":                              { uz: "Cheklangan" },
+  "Good":                                 { uz: "Yaxshi" },
+  "All site facts are optional but improve the agent's score.":
+                                          { uz: "Barcha manzil ma'lumotlari ixtiyoriy, lekin agent bahosini yaxshilaydi." },
+  "Pin a site on the map to continue.":   { uz: "Davom etish uchun xaritada manzilni belgilang." },
+  "Site captured. Next: tell the Market agent your commercial plan.":
+                                          { uz: "Manzil belgilandi. Keyingi qadam: Bozor agentiga tijorat rejangizni ayting." },
+
+  // === Market agent — extra coverage ===
+  "The numbers only you know — what one customer spends, how many you expect, how they find you. The Market agent will run from the Overview to size TAM / SAM / SOM.":
+                                          { uz: "Faqat siz biladigan raqamlar — bitta mijoz qancha sarflaydi, nechta mijoz kutyapsiz, sizni qanday topishadi. Bozor agenti Umumiy ko'rinishdan ishga tushib TAM / SAM / SOM hajmini hisoblaydi." },
+  "(set on Profile)":                     { uz: "(Profilda kiritiladi)" },
+  "Read from Profile — change them on the Profile screen if needed.":
+                                          { uz: "Profildan olingan — kerak bo'lsa Profil sahifasida o'zgartiring." },
+  "UZS / customer · the single most important number":
+                                          { uz: "UZS / mijoz · eng muhim raqam" },
+  "at full capacity":                     { uz: "to'liq quvvatda" },
+  "optional · name a similar shop":       { uz: "ixtiyoriy · o'xshash do'kon nomini kiriting" },
+  "e.g. Caffeine, Bon!":                  { uz: "masalan, Caffeine, Bon!" },
+  "agent extracts if blank":              { uz: "bo'sh qoldirilsa, agent o'zi aniqlaydi" },
+  "e.g. specialty coffee":                { uz: "masalan, maxsus qahva" },
+  "why customers come to you, not the competitor":
+                                          { uz: "mijozlar nega raqobatchiga emas, sizga kelishadi" },
+  "e.g. On-site roasting, evening dessert pairings":
+                                          { uz: "masalan, o'z joyida qovurish, kechki desert kombinatsiyalari" },
+  "overrides the format default":         { uz: "formatning standart qiymatini bekor qiladi" },
+  "Set average ticket and customers per day to continue.":
+                                          { uz: "Davom etish uchun o'rtacha chek va kunlik mijozlar sonini kiriting." },
+  "Commercial plan captured. Last step: capital structure and the loan ask.":
+                                          { uz: "Tijorat rejasi kiritildi. Oxirgi qadam: kapital tuzilishi va kredit so'rovi." },
+
+  // === Overview orchestrator / center workspace — extra coverage ===
+  "Skipped — one or more upstream agents failed":
+                                          { uz: "O'tkazib yuborildi — bir yoki bir nechta agent ishlamadi" },
+  "(unnamed)":                            { uz: "(nomsiz)" },
+  "Copy link to this scenario":           { uz: "Ushbu stsenariy havolasini nusxalash" },
+  "Demand · M-B1":                        { uz: "Talab · M-B1" },
+  "Saturation Index":                     { uz: "To'yinganlik indeksi" },
+  "Total addressable":                    { uz: "Umumiy imkoniyat" },
+  "Tashkent cafe segment":                { uz: "Toshkent qahvaxona segmenti" },
+  "Serviceable":                          { uz: "Xizmat ko'rsatiladigan" },
+  "Obtainable Y1":                        { uz: "1-yilda erishiladigan" },
+  "Realistic year-1 share":               { uz: "1-yil uchun realistik ulush" },
+  "YES":                                  { uz: "HA" },
+  "MAYBE":                                { uz: "EHTIYOT BILAN" },
+  "NO":                                   { uz: "YO'Q" },
+
+  // === App shell ===
+  "Hide assistant":                       { uz: "Yordamchini yashirish" },
+  "Show assistant":                       { uz: "Yordamchini ko'rsatish" },
+
+  // === Numeric field placeholders ===
+  "e.g. 42 000":                          { uz: "masalan, 42 000" },
+  "e.g. 150":                             { uz: "masalan, 150" },
+  "e.g. 3":                               { uz: "masalan, 3" },
+  "e.g. 75":                              { uz: "masalan, 75" },
+  "e.g. 14 000 000":                      { uz: "masalan, 14 000 000" },
+  "e.g. 180 000 000":                     { uz: "masalan, 180 000 000" },
+  "e.g. 120 000 000":                     { uz: "masalan, 120 000 000" },
+  "e.g. 50 000 000":                      { uz: "masalan, 50 000 000" },
+  "e.g. 2":                               { uz: "masalan, 2" },
+  "e.g. 8":                               { uz: "masalan, 8" },
+  "e.g. 6":                               { uz: "masalan, 6" },
+
+  // === Model names / credit products (agent-generated, matched verbatim) ===
+  "Market Sizing":                        { uz: "Bozor hajmini baholash" },
+  "Viability Check":                      { uz: "Hayotiylik tekshiruvi" },
+  "Competitor Intelligence":              { uz: "Raqobatchilar tahlili" },
+  "Credit Risk Score":                    { uz: "Kredit xavfi bahosi" },
+  "Demand Forecasting":                   { uz: "Talab prognozlash" },
+  "No loan requested":                    { uz: "Kredit so'ralmagan" },
+  "Equipment leasing":                    { uz: "Uskunalar lizingi" },
+  "Secured SME term loan":                { uz: "Garovli MSB muddatli krediti" },
+  "SME term loan + guarantee":            { uz: "MSB muddatli krediti + kafolat" },
+  "SME working capital":                  { uz: "MSB aylanma mablag'i" },
+
   // === Common ===
   "Loading…":                             { uz: "Yuklanmoqda..." },
   "Save & recompute":                     { uz: "Saqlash va qayta hisoblash" },

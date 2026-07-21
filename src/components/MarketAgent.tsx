@@ -30,8 +30,7 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
             <div className="label">{t("Step 3 · Market & sales")}</div>
             <h1 className="font-display text-xl text-navy font-bold">{t("How will it sell?")}</h1>
             <p className="text-sm text-muted mt-0.5">
-              The numbers only you know — what one customer spends, how many you expect, how they
-              find you. The Market agent will run from the Overview to size TAM / SAM / SOM.
+              {t("The numbers only you know — what one customer spends, how many you expect, how they find you. The Market agent will run from the Overview to size TAM / SAM / SOM.")}
             </p>
           </div>
         </div>
@@ -40,12 +39,12 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
       {/* From-Profile context */}
       <div className="card p-4 bg-navy/[0.02]">
         <div className="grid grid-cols-3 gap-4 text-[12px]">
-          <FromProfile k={t("Concept")} v={inputs.description || "(set on Profile)"} clamp />
-          <FromProfile k={t("Target audience")} v={prettyAudience(inputs.target_audience)} />
-          <FromProfile k={t("Format / tier")} v={`${cap(inputs.format)} · ${cap(inputs.price_tier)}`} />
+          <FromProfile k={t("Concept")} v={inputs.description || t("(set on Profile)")} clamp />
+          <FromProfile k={t("Target audience")} v={prettyAudience(inputs.target_audience, t)} />
+          <FromProfile k={t("Format / tier")} v={`${t(cap(inputs.format))} · ${t(cap(inputs.price_tier))}`} />
         </div>
         <div className="mt-2 text-[11px] text-muted flex items-center gap-1.5">
-          <Info size={11} /> Read from Profile — change them on the Profile screen if needed.
+          <Info size={11} /> {t("Read from Profile — change them on the Profile screen if needed.")}
         </div>
       </div>
 
@@ -53,14 +52,14 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
         <div className="card p-5 space-y-4">
           <div className="label">{t("Unit economics — what only you know")}</div>
 
-          <Field label={t("Average ticket")} hint="UZS / customer · the single most important number" req>
-            <input className="input" placeholder="e.g. 42 000"
+          <Field label={t("Average ticket")} hint={t("UZS / customer · the single most important number")} req>
+            <input className="input" placeholder={t("e.g. 42 000")}
               value={fmt(inputs.average_ticket_uzs)}
               onChange={(e) => setInput("average_ticket_uzs", parse(e.target.value))} />
           </Field>
 
-          <Field label={t("Customers per day target")} hint="at full capacity" req>
-            <input className="input" placeholder="e.g. 150"
+          <Field label={t("Customers per day target")} hint={t("at full capacity")} req>
+            <input className="input" placeholder={t("e.g. 150")}
               value={inputs.customers_per_day || ""}
               onChange={(e) => setInput("customers_per_day", Number(e.target.value) || 0)} />
           </Field>
@@ -83,9 +82,9 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
             </select>
           </Field>
 
-          <Field label={t("Comparable competitor")} hint="optional · name a similar shop">
+          <Field label={t("Comparable competitor")} hint={t("optional · name a similar shop")}>
             <input className="input"
-              placeholder="e.g. Caffeine, Bon!"
+              placeholder={t("e.g. Caffeine, Bon!")}
               value={inputs.comparable_competitor}
               onChange={(e) => setInput("comparable_competitor", e.target.value)} />
           </Field>
@@ -106,28 +105,28 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
             </select>
           </Field>
 
-          <Field label={t("Marketing budget")} hint="M UZS / month">
+          <Field label={t("Marketing budget")} hint={t("M UZS / month")}>
             <input className="input"
-              placeholder="e.g. 3"
+              placeholder={t("e.g. 3")}
               value={inputs.marketing_budget_m_uzs || ""}
               onChange={(e) => setInput("marketing_budget_m_uzs", Number(e.target.value) || 0)} />
           </Field>
 
-          <Field label={t("Niche")} hint="agent extracts if blank">
+          <Field label={t("Niche")} hint={t("agent extracts if blank")}>
             <input className="input"
-              placeholder="e.g. specialty coffee"
+              placeholder={t("e.g. specialty coffee")}
               value={inputs.niche}
               onChange={(e) => setInput("niche", e.target.value)} />
           </Field>
 
-          <Field label={t("Differentiation in 1 sentence")} hint="why customers come to you, not the competitor">
+          <Field label={t("Differentiation in 1 sentence")} hint={t("why customers come to you, not the competitor")}>
             <textarea className="input min-h-[80px] text-[13px] leading-snug"
-              placeholder="e.g. On-site roasting, evening dessert pairings"
+              placeholder={t("e.g. On-site roasting, evening dessert pairings")}
               value={inputs.differentiation_one_liner}
               onChange={(e) => setInput("differentiation_one_liner", e.target.value)} />
           </Field>
 
-          <Field label={t("Price tier")} hint="overrides the format default">
+          <Field label={t("Price tier")} hint={t("overrides the format default")}>
             <Seg options={["Value","Mid","Premium"]}
               value={cap(inputs.price_tier)}
               onChange={(v) => setInput("price_tier", v.toLowerCase() as any)} />
@@ -139,21 +138,21 @@ export function MarketAgent({ onChange }: { onChange: (v: ViewKey) => void }) {
         active="Market"
         onChange={onChange}
         currentDone={ready}
-        doneHint="Set average ticket and customers per day to continue."
-        nextHint="Commercial plan captured. Last step: capital structure and the loan ask."
+        doneHint={t("Set average ticket and customers per day to continue.")}
+        nextHint={t("Commercial plan captured. Last step: capital structure and the loan ask.")}
       />
     </div>
   );
 }
 
 const cap = (s: string) => s ? s[0].toUpperCase() + s.slice(1) : "";
-const prettyAudience = (a: string) => ({
+const prettyAudience = (a: string, t: (key: string) => string) => t(({
   office: "Office workers / commuters",
   residents: "Local residents",
   students: "Students",
   tourists: "Tourists",
   mixed: "Mixed",
-} as Record<string, string>)[a] || "(set on Profile)";
+} as Record<string, string>)[a] || "(set on Profile)");
 
 function FromProfile({ k, v, clamp }: { k: string; v: string; clamp?: boolean }) {
   return (
@@ -179,10 +178,11 @@ function Field({ label, hint, req, children }: { label: string; hint?: string; r
   );
 }
 function Seg({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  const t = useT();
   return (
     <div className="seg">
       {options.map((o) => (
-        <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>{o}</div>
+        <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>{t(o)}</div>
       ))}
     </div>
   );

@@ -40,8 +40,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             <div className="label">{t("Step 1 of 4 · Business profile")}</div>
             <h1 className="font-display text-xl text-navy font-bold">{t("Tell the agents about the business")}</h1>
             <p className="text-sm text-muted mt-0.5">
-              Identity and concept only. The Location agent picks the district from your map pin.
-              The clearer the description, the sharper the Market agent's TAM/SAM/SOM.
+              {t("Identity and concept only. The Location agent picks the district from your map pin. The clearer the description, the sharper the Market agent's TAM/SAM/SOM.")}
             </p>
           </div>
           <span className={clsx("chip", complete ? "bg-emerald/15 text-emerald" : "bg-amber/15 text-amber")}>
@@ -53,11 +52,11 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
       <div className="grid grid-cols-2 gap-5">
         {/* Left card: identity */}
         <div className="card p-5 space-y-4">
-          <Field label={t("Business name")} req hint="how it'll show up on the dashboard">
+          <Field label={t("Business name")} req hint={t("how it'll show up on the dashboard")}>
             <input
               autoFocus
               className="input"
-              placeholder="e.g. Black Bean Co."
+              placeholder={t("e.g. Black Bean Co.")}
               value={inputs.business_name}
               onChange={(e) => setInput("business_name", e.target.value)}
             />
@@ -69,12 +68,12 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
               value={inputs.business_type}
               onChange={(e) => setInput("business_type", e.target.value)}
             >
-              <option value="">Select type…</option>
-              {TYPES.map((t) => <option key={t}>{t}</option>)}
+              <option value="">{t("Select type…")}</option>
+              {TYPES.map((bt) => <option key={bt} value={bt}>{t(bt)}</option>)}
             </select>
           </Field>
 
-          <Field label={t("Format")} hint="positioning across the category">
+          <Field label={t("Format")} hint={t("positioning across the category")}>
             <Seg
               options={["Kiosk", "Standard", "Premium"]}
               value={cap(inputs.format)}
@@ -94,10 +93,10 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
         {/* Right card: concept */}
         <div className="card p-5 flex flex-col gap-4">
           <Field label={t("Concept description")} req
-            hint="1–4 sentences — niche, customer, what makes it different">
+            hint={t("1–4 sentences — niche, customer, what makes it different")}>
             <textarea
               className="input min-h-[160px] text-[13px] leading-relaxed"
-              placeholder="e.g. Premium specialty coffee shop targeting young professionals near a metro. On-site roasting, evening dessert pairings, work-friendly seating with fast wifi."
+              placeholder={t("e.g. Premium specialty coffee shop targeting young professionals near a metro. On-site roasting, evening dessert pairings, work-friendly seating with fast wifi.")}
               value={inputs.description}
               onChange={(e) => setInput("description", e.target.value)}
             />
@@ -118,7 +117,7 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
             </select>
           </Field>
 
-          <Field label={t("Owner experience")} hint="materially shifts credit risk">
+          <Field label={t("Owner experience")} hint={t("materially shifts credit risk")}>
             <Seg
               options={["None", "Some", "Established"]}
               value={cap(inputs.owner_experience || "")}
@@ -133,24 +132,24 @@ export function ProfileSetup({ onContinue }: { onContinue: (v: ViewKey) => void 
         <div className="flex items-center justify-between">
           <div className="label">{t("Next steps")}</div>
           {!complete && (
-            <span className="text-[11px] text-muted">Fill the required fields to unlock the agents.</span>
+            <span className="text-[11px] text-muted">{t("Fill the required fields to unlock the agents.")}</span>
           )}
         </div>
         <div className="grid grid-cols-3 gap-3 mt-3">
           <NextStep
             icon={MapPin} label="Location" enabled={complete}
             onClick={() => onContinue("Location")}
-            blurb="Pin the site on a real map; agent fetches competitors + anchors and derives the district."
+            blurb={t("Pin the site on a real map; agent fetches competitors + anchors and derives the district.")}
           />
           <NextStep
             icon={Briefcase} label="Market" enabled={complete}
             onClick={() => onContinue("Market")}
-            blurb="Provide the commercial inputs (ticket, customers/day, reach) — agent sizes TAM/SAM/SOM."
+            blurb={t("Provide the commercial inputs (ticket, customers/day, reach) — agent sizes TAM/SAM/SOM.")}
           />
           <NextStep
             icon={Sparkles} label="Financials" enabled={complete}
             onClick={() => onContinue("Financials")}
-            blurb="Capital, loan and horizon — agent infers the rest from sector benchmarks."
+            blurb={t("Capital, loan and horizon — agent infers the rest from sector benchmarks.")}
           />
         </div>
       </div>
@@ -183,11 +182,12 @@ function Field({ label, hint, req, children }: { label: string; hint?: string; r
 }
 
 function Seg({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  const t = useT();
   return (
     <div className="seg">
       {options.map((o) => (
         <div key={o} className={clsx("seg-btn", value === o && "seg-btn-active")} onClick={() => onChange(o)}>
-          {o}
+          {t(o)}
         </div>
       ))}
     </div>
@@ -198,6 +198,7 @@ function Seg({ options, value, onChange }: { options: string[]; value: string; o
 
 function DeckUpload() {
   const { setInput } = useScenario();
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [filename, setFilename] = useState<string>("");
@@ -208,7 +209,7 @@ function DeckUpload() {
   async function handle(file: File) {
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) {
-      setState("error"); setErr("File is over 20 MB.");
+      setState("error"); setErr(t("File is over 20 MB."));
       return;
     }
     setState("uploading"); setErr(""); setFilename(file.name);
@@ -247,12 +248,11 @@ function DeckUpload() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-display font-semibold text-navy">Got a pitch deck?</span>
-            <span className="chip bg-navy/5 text-navy text-[10px]">Optional</span>
+            <span className="font-display font-semibold text-navy">{t("Got a pitch deck?")}</span>
+            <span className="chip bg-navy/5 text-navy text-[10px]">{t("Optional")}</span>
           </div>
           <p className="text-[12px] text-muted mt-0.5">
-            Drop a PDF (deck, business plan, one-pager) and the agent pre-fills as much of the
-            profile as it can. You can edit anything afterwards.
+            {t("Drop a PDF (deck, business plan, one-pager) and the agent pre-fills as much of the profile as it can. You can edit anything afterwards.")}
           </p>
 
           {state === "idle" && (
@@ -261,15 +261,15 @@ function DeckUpload() {
                 onClick={() => fileRef.current?.click()}
                 className="px-3 py-2 text-[12px] font-semibold border border-petrol text-petrol rounded-lg hover:bg-petrol hover:text-white transition flex items-center gap-1.5"
               >
-                <Upload size={13} /> Upload a PDF
+                <Upload size={13} /> {t("Upload a PDF")}
               </button>
-              <span className="text-[11px] text-muted">…or drag-and-drop here · max 20 MB</span>
+              <span className="text-[11px] text-muted">{t("…or drag-and-drop here · max 20 MB")}</span>
             </div>
           )}
 
           {state === "uploading" && (
             <div className="mt-3 flex items-center gap-2 text-[12px] text-petrol">
-              <Loader2 size={13} className="animate-spin" /> Reading <span className="font-semibold">{filename}</span> with Gemini…
+              <Loader2 size={13} className="animate-spin" /> {t("Reading")} <span className="font-semibold">{filename}</span> {t("with Gemini…")}
             </div>
           )}
 
@@ -280,7 +280,7 @@ function DeckUpload() {
           {state === "error" && (
             <div className="mt-3 text-[12px] text-rose-600 flex items-start gap-2">
               <AlertCircle size={13} className="mt-0.5 shrink-0" /> {err}
-              <button onClick={reset} className="ml-2 underline">try again</button>
+              <button onClick={reset} className="ml-2 underline">{t("try again")}</button>
             </div>
           )}
         </div>
@@ -303,6 +303,7 @@ function DeckUpload() {
 function ExtractedSummary({
   file, extracted, onReset,
 }: { file: string; extracted: ExtractedProfile; onReset: () => void }) {
+  const t = useT();
   const friendly: Record<string, string> = {
     business_name: "Name", business_type: "Type", format: "Format", stage: "Stage",
     description: "Description", target_audience: "Audience", owner_experience: "Experience",
@@ -316,9 +317,9 @@ function ExtractedSummary({
         <FileText size={13} className="text-emerald mt-0.5" />
         <div className="flex-1 text-[12px] text-navy/85 leading-relaxed">
           <span className="font-semibold">{file}</span> — {extracted.source_summary
-            ?? `${extracted.filled_fields.length} field${extracted.filled_fields.length === 1 ? "" : "s"} pre-filled.`}
+            ?? `${extracted.filled_fields.length} ${t("field(s) pre-filled")}`}
         </div>
-        <button onClick={onReset} className="text-muted hover:text-navy" title="Remove">
+        <button onClick={onReset} className="text-muted hover:text-navy" title={t("Remove")}>
           <X size={13} />
         </button>
       </div>
@@ -326,13 +327,13 @@ function ExtractedSummary({
         <div className="mt-2 flex flex-wrap gap-1.5">
           {extracted.filled_fields.map((f) => (
             <span key={f} className="chip bg-white text-emerald border border-emerald/30">
-              {friendly[f] ?? f}
+              {t(friendly[f] ?? f)}
             </span>
           ))}
         </div>
       )}
       <div className="mt-2 text-[11px] text-muted">
-        Edit any field below — the deck is just a starting point.
+        {t("Edit any field below — the deck is just a starting point.")}
       </div>
     </div>
   );
@@ -360,6 +361,7 @@ function applyToInputs(
 }
 
 function NextStep({ icon: Icon, label, enabled, onClick, blurb }: { icon: any; label: string; enabled: boolean; onClick: () => void; blurb: string }) {
+  const t = useT();
   return (
     <button
       onClick={enabled ? onClick : undefined}
@@ -377,7 +379,7 @@ function NextStep({ icon: Icon, label, enabled, onClick, blurb }: { icon: any; l
         </div>
         {enabled && <ArrowRight size={14} className="text-petrol" />}
       </div>
-      <div className="mt-2 font-display font-semibold text-navy">{label} agent</div>
+      <div className="mt-2 font-display font-semibold text-navy">{t(label)} {t("agent")}</div>
       <div className="text-[11px] text-muted mt-1 leading-relaxed">{blurb}</div>
     </button>
   );

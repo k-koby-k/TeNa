@@ -41,8 +41,7 @@ export function Assistant() {
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "assistant",
-      text:
-        "Hi — I'm your **Business Case Assistant**. Type a question, or hit the mic and tell me about your business in Uzbek, Russian or English — I'll fill the form for you.",
+      text: t("Hi — I'm your **Business Case Assistant**. Type a question, or hit the mic and tell me about your business in Uzbek, Russian or English — I'll fill the form for you."),
     },
   ]);
   const [input, setInput] = useState("");
@@ -58,7 +57,7 @@ export function Assistant() {
   async function startRecording() {
     setRecError("");
     if (!navigator.mediaDevices?.getUserMedia) {
-      setRecState("error"); setRecError("Microphone API not available in this browser.");
+      setRecState("error"); setRecError(t("Microphone API not available in this browser."));
       return;
     }
     try {
@@ -78,7 +77,7 @@ export function Assistant() {
       // their input is being captured even before transcription comes back.
       setMsgs((m) => [...m, { role: "user", text: "🎤 …", pending: true }]);
     } catch (e: any) {
-      setRecState("error"); setRecError(e?.message ?? "Microphone permission denied.");
+      setRecState("error"); setRecError(e?.message ?? t("Microphone permission denied."));
     }
   }
 
@@ -88,7 +87,7 @@ export function Assistant() {
       setRecState("uploading");
       // Update the placeholder bubble while we wait for Gemini.
       setMsgs((m) => m.map((msg, i) => i === m.length - 1 && msg.pending
-        ? { ...msg, text: "🎤 transcribing…" } : msg));
+        ? { ...msg, text: `🎤 ${t("transcribing…")}` } : msg));
       mr.stop();
     }
     recorderRef.current = null;
@@ -97,11 +96,11 @@ export function Assistant() {
   async function sendAudio(blob: Blob) {
     try {
       const res = await api.voice(blob);
-      const transcript = res.transcript?.trim() || "(no speech detected — try again)";
-      const filled = applyVoiceToInputs(res, setScenarioInput);
+      const transcript = res.transcript?.trim() || t("(no speech detected — try again)");
+      const filled = applyVoiceToInputs(res, setScenarioInput, t);
       const reply = res.reply?.trim() || (filled.length
-        ? `Got it — captured ${filled.length} field${filled.length === 1 ? "" : "s"}: ${filled.join(", ")}.`
-        : "Got it, but I didn't catch any specific business details. Try repeating with more detail (business type, district, capital).");
+        ? `${t("Got it — captured")} ${filled.length} ${t("field(s)")}: ${filled.join(", ")}.`
+        : t("Got it, but I didn't catch any specific business details. Try repeating with more detail (business type, district, capital)."));
       // Replace the placeholder bubble with the real transcript, then append
       // the assistant's reply — both in one functional update so React renders
       // them together.
@@ -123,7 +122,7 @@ export function Assistant() {
         const next = [...m];
         const last = next[next.length - 1];
         if (last && last.pending) next.pop();
-        next.push({ role: "assistant", text: `Voice transcription failed: ${String(e?.message ?? e).slice(0, 160)}` });
+        next.push({ role: "assistant", text: `${t("Voice transcription failed:")} ${String(e?.message ?? e).slice(0, 160)}` });
         return next;
       });
       setRecState("error"); setRecError(String(e?.message ?? e).slice(0, 200));
@@ -166,12 +165,12 @@ export function Assistant() {
           <div>
             <div className="font-display font-bold text-navy flex items-center gap-2">
               <Bot size={16} className="text-petrol" />
-              Business Case Assistant
+              {t("Business Case Assistant")}
             </div>
-            <div className="text-[11px] text-muted mt-0.5">Ask the AI · grounded in this analysis</div>
+            <div className="text-[11px] text-muted mt-0.5">{t("Ask the AI · grounded in this analysis")}</div>
           </div>
           <span className="chip bg-emerald/15 text-emerald">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse" /> Online
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse" /> {t("Online")}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -179,13 +178,13 @@ export function Assistant() {
             ? [
                 result.business_type,
                 result.location.split(",")[0],
-                `${result.credit.suggested_loan_m_uzs}M UZS loan`,
-                `${result.verdict.confidence}% confidence`,
-                "6 flagship models",
+                `${result.credit.suggested_loan_m_uzs}M UZS ${t("loan")}`,
+                `${result.verdict.confidence}% ${t("confidence")}`,
+                t("6 flagship models"),
               ]
-            : ["No analysis yet — fill the form and recompute"]
-          ).map((t) => (
-            <span key={t} className="chip bg-navy/5 text-navy">{t}</span>
+            : [t("No analysis yet — fill the form and recompute")]
+          ).map((tag) => (
+            <span key={tag} className="chip bg-navy/5 text-navy">{tag}</span>
           ))}
         </div>
       </div>
@@ -200,13 +199,13 @@ export function Assistant() {
             <span className="flex gap-1">
               <Dot /> <Dot delay={150} /> <Dot delay={300} />
             </span>
-            <span>thinking…</span>
+            <span>{t("thinking…")}</span>
           </div>
         )}
 
         {msgs.length === 1 && (
           <div className="pt-2">
-            <div className="label mb-2">Suggested questions</div>
+            <div className="label mb-2">{t("Suggested questions")}</div>
             <div className="space-y-1.5">
               {SUGGESTED.map((s) => (
                 <button
@@ -215,7 +214,7 @@ export function Assistant() {
                   className="w-full text-left text-[12px] text-navy/85 px-3 py-2 rounded-lg border border-line bg-white hover:border-petrol hover:bg-petrol/5 transition flex items-start gap-2"
                 >
                   <Sparkles size={12} className="mt-0.5 text-petrol shrink-0" />
-                  <span>{s}</span>
+                  <span>{t(s)}</span>
                 </button>
               ))}
             </div>
@@ -330,6 +329,7 @@ function pickMimeType(): string {
 function applyVoiceToInputs(
   v: VoiceResult,
   setInput: <K extends keyof ScenarioInputs>(k: K, v: ScenarioInputs[K]) => void,
+  t: (key: string) => string,
 ): string[] {
   const friendly: Record<string, string> = {
     business_name: "name", business_type: "type", format: "format", stage: "stage",
@@ -341,7 +341,7 @@ function applyVoiceToInputs(
   const filled: string[] = [];
   const set = <K extends keyof ScenarioInputs>(k: K, val: ScenarioInputs[K], label = String(k)) => {
     setInput(k, val);
-    filled.push(friendly[label] ?? label);
+    filled.push(t(friendly[label] ?? label));
   };
   if (v.business_name)    set("business_name", v.business_name, "business_name");
   if (v.business_type)    set("business_type", v.business_type, "business_type");
