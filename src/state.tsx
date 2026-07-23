@@ -113,49 +113,55 @@ export interface ScenarioInputs {
 
 // First-paint defaults so the app doesn't open to a blank screen.
 // Click "+ New analysis" to wipe back to EMPTY_INPUTS.
+//
+// Demo scenario: a study cafe next to Qarshi State University (QarDU) —
+// coordinates sit ~11m from the History faculty, with 9 faculties/school
+// within 600m and zero direct cafe competitors within 500m (real OSM data,
+// see DEMO_LOCATION_AGENT below). Chosen so the demo tells a real, defensible
+// location story instead of an invented one.
 const DEFAULT_INPUTS: ScenarioInputs = {
-  business_name: "Black Bean Co.", business_type: "Coffee shop",
+  business_name: "Kitob va Kofe", business_type: "Coffee shop",
   // Left blank on purpose: contact is collected by the ContactGate right before
   // the founder sees results (our no-login stand-in for an account). Pre-filling
   // it here would satisfy isContactComplete() and silently skip the gate.
   contact_name: "", contact_phone: "",
-  format: "premium", stage: "pilot",
-  description: "Premium specialty coffee shop near Chilonzor metro, targeting young professionals with on-site roasting, evening dessert pairings and work-friendly seating.",
-  target_audience: "office",
-  owner_experience: "some", years_in_industry: 4,
-  prior_businesses_count: 1, prior_business_failures: 0,
-  legal_entity: "sole_prop", has_employees_planned: 4,
+  format: "standard", stage: "pilot",
+  description: "QarDU talabalari va o'qituvchilari uchun mo'ljallangan, hamyonbop narxdagi qahvaxona — bepul Wi-Fi, uzun ish stollari, kunduzgi tushlik va konspekt chop etish xizmati bilan.",
+  target_audience: "students",
+  owner_experience: "some", years_in_industry: 2,
+  prior_businesses_count: 0, prior_business_failures: 0,
+  legal_entity: "sole_prop", has_employees_planned: 3,
 
-  // Map opens fresh on Hamid Olimjon; user picks the actual spot themselves.
-  pin_lat: null, pin_lng: null,
-  city: "Tashkent", district: "",
-  site_size_sqm: 75, monthly_rent_uzs: 14_000_000,
+  // Pinned straight on the QarDU campus for the demo — no manual map-pinning needed.
+  pin_lat: 38.85509, pin_lng: 65.81075,
+  city: "Qarshi", district: "",
+  site_size_sqm: 55, monthly_rent_uzs: 9_000_000,
   operating_hours: "long", site_type: "street_front", parking: "limited",
   lease_term_months: 24, rent_deposit_months: 2,
 
-  niche: "Specialty coffee", price_tier: "premium",
-  average_ticket_uzs: 42_000, customers_per_day: 150,
+  niche: "Talabalar uchun hamyonbop qahva va o'qish maydoni", price_tier: "value",
+  average_ticket_uzs: 14_000, customers_per_day: 180,
   days_open_per_week: 7, sales_channel: "storefront",
-  marketing_reach: "district", marketing_budget_m_uzs: 3,
-  differentiation_one_liner: "On-site roasting and evening dessert pairings",
+  marketing_reach: "district", marketing_budget_m_uzs: 2,
+  differentiation_one_liner: "Bepul Wi-Fi, uzun ish stollari va konspekt chop etish xizmati",
   comparable_competitor: "",
 
-  budget_uzs: 180_000_000, loan_uzs: 120_000_000,
-  repayment_months: 24, grace_period_months: 3, repay_freq: "monthly",
-  use_equipment_pct: 35, use_renovation_pct: 25, use_inventory_pct: 15,
-  use_working_capital_pct: 20, use_marketing_pct: 5,
-  collateral_type: "deposit", collateral_value_uzs: 50_000_000,
+  budget_uzs: 90_000_000, loan_uzs: 60_000_000,
+  repayment_months: 24, grace_period_months: 2, repay_freq: "monthly",
+  use_equipment_pct: 40, use_renovation_pct: 25, use_inventory_pct: 15,
+  use_working_capital_pct: 15, use_marketing_pct: 5,
+  collateral_type: "deposit", collateral_value_uzs: 20_000_000,
   collateral_pledged_elsewhere: false,
   has_cosigner: false, cosigner_relationship: "",
-  existing_monthly_debts_m_uzs: 2, other_monthly_income_m_uzs: 8,
-  dependents_count: 2,
-  top_risk_self_identified: "Local saturation and weekend competition",
+  existing_monthly_debts_m_uzs: 0, other_monthly_income_m_uzs: 3,
+  dependents_count: 1,
+  top_risk_self_identified: "Yozgi ta'til davrida talabalar sonining keskin kamayishi",
   contingency_runway_months: 3, business_insurance_planned: true,
-  other_monthly_costs_m_uzs: 6, revenue_ramp_months: 4,
+  other_monthly_costs_m_uzs: 4, revenue_ramp_months: 3,
 
   notes: "",
-  payroll_m_uzs: 22, cogs_pct: 38, margin_pct: 22,
-  competitors_500m: 7, walkability: 82, visibility: 74,
+  payroll_m_uzs: 12, cogs_pct: 35, margin_pct: 28,
+  competitors_500m: 0, walkability: 91, visibility: 68,
 };
 
 // Blank slate. business_type/district required; the rest are validated
@@ -247,55 +253,109 @@ function deriveCompletion(inputs: ScenarioInputs, result: AnalyzeResponse | null
   };
 }
 
-// ---- the canned default that matches the server's mock ----
+// ---- the canned demo data (QarDU study-cafe scenario) ----
+// Used two ways: (1) as ScenarioProvider's first-paint `result`-equivalent via
+// loadDemo(), and (2) by OverviewOrchestrator's "canned mode" — see
+// `demoCanned` below — which shows the real agent-loading UI for a few
+// seconds, then reveals this instead of calling Gemini. Keeps demos safe from
+// rate limits without faking anything that isn't grounded: the location facts
+// (competitors, faculties, distances) are real OpenStreetMap data around
+// 38.85509, 65.81075.
 
-const DEFAULT_RESULT: AnalyzeResponse = {
-  request_id: "req_default",
-  scenario_id: "SCN-2026-0481",
+export const DEMO_LOCATION_AGENT: LocationAgentResult = {
+  foot_traffic_per_day: 3200,
+  competitors_within_500m: 0,
+  competitors_within_1km: 3,
+  walkability: 91, visibility: 68, score: 92,
+  competitors: [
+    { name: "Ganga", kind: "amenity=cafe", distance_m: 586, lat: 38.859987, lng: 65.808252 },
+    { name: "Sahara Lounge Bar", kind: "amenity=cafe", distance_m: 590, lat: 38.858381, lng: 65.805410 },
+    { name: "Sava", kind: "amenity=cafe", distance_m: 613, lat: 38.860595, lng: 65.811019 },
+  ],
+  anchors: [
+    { name: "QarDU Tarix fakulteti", type: "education", distance_m: 11, lat: 38.855101, lng: 65.810882 },
+    { name: "QarDU Iqtisodiyot fakulteti", type: "education", distance_m: 26, lat: 38.855293, lng: 65.810893 },
+    { name: "QarDU Tibbiyot fakulteti", type: "education", distance_m: 55, lat: 38.855502, lng: 65.810404 },
+    { name: "QarDU Geografiya va agronomiya fakulteti", type: "education", distance_m: 100, lat: 38.855574, lng: 65.809783 },
+    { name: "Gung maktab", type: "education", distance_m: 117, lat: 38.854051, lng: 65.810961 },
+    { name: "QarDU Matematika va kompyuter ilmlari fakulteti", type: "education", distance_m: 195, lat: 38.856407, lng: 65.809267 },
+    { name: "QarDU Fizika fakulteti", type: "education", distance_m: 199, lat: 38.856673, lng: 65.809671 },
+    { name: "QarDU Akademik litsey", type: "education", distance_m: 220, lat: 38.855012, lng: 65.808216 },
+    { name: "QarDU San'atshunoslik fakulteti", type: "education", distance_m: 592, lat: 38.860270, lng: 65.809197 },
+  ],
+  rationale: [
+    "500 metr radiusda birorta ham to'g'ridan-to'g'ri raqobatchi (qahvaxona) yo'q — eng yaqini 586 metrda.",
+    "9 ta ta'lim muassasasi (fakultetlar, litsey, maktab) 600 metr ichida joylashgan — kuniga 3200 nafarga yaqin piyoda oqimi.",
+    "Yo'lakdan ko'rinish o'rtacha (68/100) — asosiy kirish yo'lidan biroz chetda.",
+    "Ijara narxi (9 mln so'm/oy) hudud bo'yicha past — yalpi marjani yaxshilaydi.",
+  ],
+  sparse_data: false,
+  district: "Qarshi",
+  neighborhood: "Navoiy mahallasi",
+  road: "Ko'chabog' ko'chasi",
+  display_address: "Ko'chabog' ko'chasi, Navoiy mahallasi, Qarshi shahri, Qarshi tumani, Qashqadaryo viloyati",
+};
+
+export const DEMO_SYNTHESIS: SynthesizeResult = {
+  blurb: "QarDU kampusi atrofida to'g'ridan-to'g'ri raqobat yo'q va talabalar oqimi juda yuqori — past o'rtacha chek va yozgi mavsumiylik asosiy xavflar bo'lib qolmoqda. Boshlang'ich kredit hajmini ehtiyotkorlik bilan belgilash tavsiya etiladi.",
+  positives: [
+    "QarDU kampusi atrofida 500 metr radiusda birorta ham qahvaxona yo'q — bozor deyarli bo'sh",
+    "9 ta fakultet, litsey va maktab 600 metr ichida — kuniga 3200+ potensial mijoz oqimi",
+    "Ijaraning pastligi (9 mln so'm/oy) yuqori yalpi marja imkonini beradi (58%)",
+    "Talabalar segmentida barqaror, kundalik takrorlanuvchi xarid xatti-harakati",
+  ],
+  risks: [
+    "Yozgi ta'til davrida (iyun-avgust) talabalar oqimi ~42% kamayadi",
+    "O'rtacha chek past (14,000 so'm) — daromadning hajmga bog'liqligi yuqori",
+    "Yangi brend — QarDU talabalari orasida hali tanilmagan",
+    "Yagona joylashuvga bog'liqlik — kengayish qo'shimcha sarmoya talab qiladi",
+  ],
+  next_actions: [
+    "Kichikroq boshlang'ich kredit taklif qilish — 60 mln so'm",
+    "Yozgi ta'til uchun 3 oylik aylanma mablag' zaxirasini qo'shish",
+    "Birinchi semestrni sinov muddati sifatida kuzatib, keyin qayta baholash",
+    "7 kun ichida mijoz bilan RM maslahat qo'ng'irog'ini rejalashtirish",
+  ],
+  bank_product: "Aylanma mablag' krediti",
+  bank_conditions: [
+    "Boshlang'ich kredit: 60 mln so'm, 24 oy muddat, 2 oy imtiyozli davr",
+    "Garov: 20 mln so'm qiymatidagi depozit",
+    "Yozgi ta'til davri uchun 3 oylik to'lov bo'yicha moslashuvchan jadval",
+  ],
+};
+
+export const DEFAULT_RESULT: AnalyzeResponse = {
+  request_id: "req_demo_qardu",
+  scenario_id: "SCN-2026-QARDU",
   business_type: "Coffee shop",
-  location: "Chilonzor, Tashkent",
-  market: { tam_b_uzs: 184, sam_b_uzs: 62, som_b_uzs: 8.4, saturation_index: 61, score: 82 },
+  location: "Qarshi",
+  market: { tam_b_uzs: 24, sam_b_uzs: 6.5, som_b_uzs: 1.2, saturation_index: 28, score: 88 },
   demand: {
-    forecast_index: [92, 96, 101, 104, 108, 112, 117, 124, 119, 122, 130, 134],
-    peak_periods: ["Navro'z (March)", "September back-to-office"],
-    off_peak_dip_pct: 18, score: 74,
+    forecast_index: [105, 78, 62, 68, 128, 135, 130, 118, 74, 96, 122, 126],
+    peak_periods: ["Sentyabr — o'quv yili boshlanishi", "Noyabr — sessiya oldi tayyorgarlik"],
+    off_peak_dip_pct: 42, score: 69,
   },
-  location_block: { foot_traffic_per_day: 850, competitors_within_500m: 7, walkability: 82, visibility: 74, score: 79 },
-  financial: { breakeven_month: 7, burn_rate_m_uzs: 32, roi_12mo_pct: 18, gross_margin_pct: 62, score: 64 },
-  competition: { direct_competitors: 7, competitor_density_index: 68, failure_probability_pct: 34, risk_level: "Medium", score: 61 },
-  credit: { suggested_loan_m_uzs: 120, dti: 0.32, credit_readiness: 71, product: "SME working capital", score: 71 },
+  location_block: { foot_traffic_per_day: 3200, competitors_within_500m: 0, walkability: 91, visibility: 68, score: 92 },
+  financial: { breakeven_month: 5, burn_rate_m_uzs: 9, roi_12mo_pct: 34, gross_margin_pct: 58, score: 75 },
+  competition: { direct_competitors: 3, competitor_density_index: 12, failure_probability_pct: 16, risk_level: "Low", score: 84 },
+  credit: { suggested_loan_m_uzs: 60, dti: 0.18, credit_readiness: 82, product: DEMO_SYNTHESIS.bank_product, score: 79 },
   factors: {
-    positives: [
-      "Strong card spend growth in cafe MCC inside 500m radius",
-      "Evening + weekend traffic 1.4× district average",
-      "Limited premium competitor coverage (3 within 500m)",
-      "Borrower segment shows healthy 12-mo turnover trend",
-    ],
-    risks: [
-      "Rent burden above safe threshold (~22% of projected revenue)",
-      "Seasonality dip during Ramazon (~ -18% AOV)",
-      "Competitor density elevated within 250m",
-      "Repayment stress in conservative demand scenario",
-    ],
-    next_actions: [
-      "Offer smaller initial loan, ~120M UZS",
-      "Add 3-month working capital buffer",
-      "Phased rollout, reassess after Q1 turnover",
-      "Schedule RM advisory call within 7 days",
-    ],
+    positives: DEMO_SYNTHESIS.positives,
+    risks: DEMO_SYNTHESIS.risks,
+    next_actions: DEMO_SYNTHESIS.next_actions,
   },
   verdict: {
-    label: "Proceed with caution", short_label: "MAYBE",
-    confidence: 78, composite_score: 64,
-    blurb: "Strong demand and good foot traffic at Chilonzor metro, but high rent burden and local saturation reduce upside.",
+    label: "Recommend Launch", short_label: "YES",
+    confidence: 85, composite_score: 81,
+    blurb: DEMO_SYNTHESIS.blurb,
   },
   models: [
-    { id: "M-A3", name: "Saturation Index",       version: "1.2.0", confidence: 0.81, last_retrain: "2026-03-15" },
-    { id: "M-B1", name: "Demand Forecasting",     version: "1.4.0", confidence: 0.76, last_retrain: "2026-03-12" },
-    { id: "M-C1", name: "Location Score",          version: "2.0.1", confidence: 0.79, last_retrain: "2026-03-18" },
-    { id: "M-D1", name: "Viability Check",         version: "1.1.0", confidence: 0.72, last_retrain: "2026-03-10" },
-    { id: "M-E1", name: "Competitor Intelligence", version: "1.3.0", confidence: 0.84, last_retrain: "2026-03-14" },
-    { id: "M-F1", name: "Credit Risk Score",       version: "2.1.0", confidence: 0.77, last_retrain: "2026-03-17" },
+    { id: "M-A3", name: "Saturation Index",       version: "1.2.0", confidence: 0.81, last_retrain: "2026-06-01" },
+    { id: "M-B1", name: "Demand Forecasting",     version: "1.4.0", confidence: 0.76, last_retrain: "2026-06-01" },
+    { id: "M-C1", name: "Location Score",          version: "2.0.1", confidence: 0.79, last_retrain: "2026-06-01" },
+    { id: "M-D1", name: "Viability Check",         version: "1.1.0", confidence: 0.72, last_retrain: "2026-06-01" },
+    { id: "M-E1", name: "Competitor Intelligence", version: "1.3.0", confidence: 0.84, last_retrain: "2026-06-01" },
+    { id: "M-F1", name: "Credit Risk Score",       version: "2.1.0", confidence: 0.77, last_retrain: "2026-06-01" },
   ],
 };
 
@@ -424,6 +484,12 @@ interface Ctx {
   setLocationAgent: (r: LocationAgentResult | null) => void;
   synthesis: SynthesizeResult | null;
   setSynthesis: (r: SynthesizeResult | null) => void;
+  // True for the pre-filled demo scenario: "Run full analysis" shows the real
+  // agent-loading UI for a few seconds, then reveals canned data instead of
+  // calling Gemini (demo-safe against rate limits). Turns off — permanently,
+  // for that session — the moment "+ New analysis" is pressed, same as the
+  // prefilled fields it rides alongside.
+  demoCanned: boolean;
 }
 
 const ScenarioCtx = createContext<Ctx | null>(null);
@@ -436,6 +502,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [locationAgent, setLocationAgent] = useState<LocationAgentResult | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesizeResult | null>(null);
+  const [demoCanned, setDemoCanned] = useState(true);
 
   const value = useMemo<Ctx>(() => ({
     inputs,
@@ -459,13 +526,18 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       setResult(null);
       setLocationAgent(null);
       setSynthesis(null);
+      setDemoCanned(false);
     },
     loadDemo: () => {
       setInputs(DEFAULT_INPUTS);
       setResult(DEFAULT_RESULT);
+      setLocationAgent(DEMO_LOCATION_AGENT);
+      setSynthesis(DEMO_SYNTHESIS);
+      setDemoCanned(true);
     },
     locationAgent, setLocationAgent,
     synthesis, setSynthesis,
+    demoCanned,
     hydrate: (req, res) => {
       const restored = { ...EMPTY_INPUTS };
       for (const key of Object.keys(EMPTY_INPUTS) as Array<keyof ScenarioInputs>) {
@@ -495,7 +567,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     },
     missing: missingProfile(inputs),
     completion: deriveCompletion(inputs, result),
-  }), [inputs, result, locationAgent, synthesis]);
+  }), [inputs, result, locationAgent, synthesis, demoCanned]);
 
   return <ScenarioCtx.Provider value={value}>{children}</ScenarioCtx.Provider>;
 }

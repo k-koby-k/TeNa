@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { api, type LocationAgentResult, type PlaceHit, type MarketAgentResult, type FinancialsAgentResult, type AnalyzeResponse, type SynthesizeResult } from "../api";
-import { useScenario, type ScenarioInputs } from "../state";
+import { useScenario, type ScenarioInputs, DEFAULT_RESULT, DEMO_LOCATION_AGENT, DEMO_SYNTHESIS } from "../state";
 import { useT } from "../i18n";
 
 type AgentKey = "location" | "market" | "financials" | "synthesis";
@@ -58,7 +58,7 @@ async function withRetry<T>(fn: () => Promise<T>, label = "agent"): Promise<T> {
 }
 
 export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: ReactNode } = {}) {
-  const { inputs, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis } = useScenario();
+  const { inputs, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis, demoCanned } = useScenario();
   const t = useT();
   const [run, setRun] = useState<RunState>(initialState);
   const running = Object.values(run).some((s) => s.status === "running");
@@ -94,7 +94,40 @@ export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: Reac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Demo-safe path: no Gemini calls at all. Shows the same chip-loading UI
+  // for ~7s (staggered so it reads as real work, not a spinner stuck in
+  // place), then reveals the canned QarDU result. Only runs while
+  // `demoCanned` is true — pressing "+ New analysis" turns it off for the
+  // rest of the session, same as the prefilled fields it rides alongside.
+  async function runCanned() {
+    setRun({
+      location:   { status: "running" },
+      market:     { status: "running" },
+      financials: { status: "running" },
+      synthesis:  { status: "pending" },
+    });
+    await sleep(3200);
+    setLocationAgent(DEMO_LOCATION_AGENT);
+    setResult(DEFAULT_RESULT);
+    setRun((s) => ({
+      ...s,
+      location:   { status: "done" },
+      market:     { status: "done" },
+      financials: { status: "done" },
+      synthesis:  { status: "running" },
+    }));
+    await sleep(3800);
+    setSynthesis(DEMO_SYNTHESIS);
+    setRun((s) => ({ ...s, synthesis: { status: "done" } }));
+    saveToHistory(DEFAULT_RESULT, { location: DEMO_LOCATION_AGENT, synthesis: DEMO_SYNTHESIS });
+  }
+
   async function runAll() {
+    if (demoCanned) {
+      await runCanned();
+      return;
+    }
+
     setRun({
       location:   { status: "running" },
       market:     { status: "running" },
@@ -372,7 +405,7 @@ function AgentChip({ k, label, icon: Icon, state }: { k: AgentKey; label: string
  *  pin exists; competitor + anchor markers layer on after the Location agent
  *  finishes. The user can re-pin from here too (same Nominatim search). */
 function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, number] }) {
-  const { setInput, setLocationAgent } = useScenario();
+  const { inputs, setInput, setLocationAgent } = useScenario();
   const t = useT();
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -481,7 +514,7 @@ function OverviewMap({ r, pin }: { r: LocationAgentResult | null; pin: [number, 
           <div className="label">{t("Location intelligence · live OSM map")}</div>
           <div className="font-display font-bold text-navy text-lg truncate">
             {r?.district
-              ? <>{r.district}<span className="text-muted font-medium">, Tashkent</span></>
+              ? <>{r.district}<span className="text-muted font-medium">, {inputs.city || "Tashkent"}</span></>
               : t("Selected site")}
             {r?.road && <span className="text-muted font-medium"> · {r.road}</span>}
           </div>
@@ -752,7 +785,8 @@ function buildResultFromAgents(
   else                      { short_label = "NO";    label = "Not recommended"; }
   const confidence = Math.min(95, 60 + Math.abs(composite - 50));
 
-  const districtFromGeo = loc?.district ? `${loc.district}, Tashkent` : (inputs.district ? `${inputs.district}, Tashkent` : "Tashkent");
+  const city = inputs.city || "Tashkent";
+  const districtFromGeo = loc?.district ? `${loc.district}, ${city}` : (inputs.district ? `${inputs.district}, ${city}` : city);
 
   return {
     request_id: fmtId,
