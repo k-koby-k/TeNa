@@ -337,7 +337,11 @@ export const DEFAULT_RESULT: AnalyzeResponse = {
   },
   location_block: { foot_traffic_per_day: 3200, competitors_within_500m: 0, walkability: 91, visibility: 68, score: 92 },
   financial: { breakeven_month: 5, burn_rate_m_uzs: 9, roi_12mo_pct: 34, gross_margin_pct: 58, score: 75 },
-  competition: { direct_competitors: 3, competitor_density_index: 12, failure_probability_pct: 16, risk_level: "Low", score: 84 },
+  // Note: competition.score is a risk/saturation index (lower = safer) — the
+  // opposite convention from the other blocks — and gets inverted (100-score)
+  // when folded into the composite. See deriveCompetition() in
+  // OverviewOrchestrator.tsx: score ~= (saturation_index + density)/2.
+  competition: { direct_competitors: 0, competitor_density_index: 6, failure_probability_pct: 14, risk_level: "Low", score: 17 },
   credit: { suggested_loan_m_uzs: 60, dti: 0.18, credit_readiness: 82, product: DEMO_SYNTHESIS.bank_product, score: 79 },
   factors: {
     positives: DEMO_SYNTHESIS.positives,
