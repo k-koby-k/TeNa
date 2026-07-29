@@ -10,6 +10,7 @@
 import { Wallet, AlertTriangle, ShieldCheck } from "lucide-react";
 import clsx from "clsx";
 import { useScenario } from "../state";
+import { debtService, equitySharePct, totalProjectCost } from "../finance";
 import type { ViewKey } from "./Sidebar";
 import { WizardSteps, WizardFooter } from "./Wizard";
 import { useT } from "../i18n";
@@ -26,6 +27,42 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
     + inputs.use_working_capital_pct + inputs.use_marketing_pct;
 
   const ready = inputs.budget_uzs > 0 && inputs.loan_uzs >= 0 && inputs.monthly_rent_uzs > 0;
+
+  const collateralTotal = inputs.collateral_items
+    .reduce((a, c) => a + (c.appraised_value_uzs || 0), 0);
+  const ltvPct = collateralTotal > 0 && inputs.loan_uzs > 0
+    ? inputs.loan_uzs / collateralTotal : null;
+  const ltvTone =
+    ltvPct == null ? "bg-navy/5 text-muted"
+    : ltvPct <= 0.7 ? "bg-emerald/10 text-emerald"
+    : ltvPct <= 1.0 ? "bg-amber/10 text-amber"
+    : "bg-rose-50 text-rose-600";
+
+  const equityPct = equitySharePct(inputs.budget_uzs, inputs.loan_uzs);
+
+  /** Live repayment box — shows the real instalment, so the founder sees the
+   *  interest cost before submitting rather than after. */
+  function RepaymentPreview() {
+    if (!inputs.loan_uzs) return null;
+    const svc = debtService(
+      inputs.loan_uzs, inputs.interest_rate_pct, inputs.subsidy_rate_pct,
+      inputs.repayment_months, inputs.grace_period_months,
+    );
+    return (
+      <div className="mt-5 pt-5 border-t border-line">
+        <div className="label mb-2">{t("Repayment at these terms")}</div>
+        <div className="grid grid-cols-4 gap-3">
+          <Mini k={t("Effective rate")} v={`${svc.effectiveRatePct.toFixed(1)}%`}
+                sub={inputs.subsidy_rate_pct > 0 ? t("after compensation") : undefined} />
+          <Mini k={t("Monthly payment")} v={`${(svc.peakPayment / 1_000_000).toFixed(1)}M`} sub={t("UZS / month")} />
+          {inputs.grace_period_months > 0 && (
+            <Mini k={t("During grace")} v={`${(svc.gracePayment / 1_000_000).toFixed(1)}M`} sub={t("interest only")} />
+          )}
+          <Mini k={t("Total interest")} v={`${(svc.totalInterest / 1_000_000).toFixed(1)}M`} sub={t("over the term")} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -56,6 +93,31 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
         </div>
       </div>
 
+      {/* Total project cost + own-funds share — bank form row 9. */}
+      {(inputs.budget_uzs > 0 || inputs.loan_uzs > 0) && (
+        <div className="card p-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Mini k={t("Total project cost")}
+                  v={`${(totalProjectCost(inputs.budget_uzs, inputs.loan_uzs) / 1_000_000).toFixed(0)}M`}
+                  sub={t("own funds + credit")} />
+            <Mini k={t("Bank credit")} v={`${(inputs.loan_uzs / 1_000_000).toFixed(0)}M`} sub={t("UZS")} />
+            <div className={clsx(
+              "p-2.5 rounded-lg border",
+              equityPct == null ? "bg-navy/[0.03] border-line"
+              : equityPct >= 30 ? "bg-emerald/5 border-emerald/30"
+              : equityPct >= 20 ? "bg-amber/5 border-amber/30"
+              : "bg-rose-50 border-rose-200",
+            )}>
+              <div className="text-[10px] uppercase tracking-wider text-muted font-semibold">{t("Own funds share")}</div>
+              <div className="font-display font-bold text-navy text-[17px] leading-tight mt-0.5">
+                {equityPct == null ? "—" : `${equityPct}%`}
+              </div>
+              <div className="text-[10px] text-muted mt-0.5">{t("state programmes expect 20–30%")}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Section 1: Capital + use of funds */}
       <Section title={t("Capital structure & use of funds")} subtitle={t("How much, from where, spent on what.")}>
         <div className="grid grid-cols-2 gap-5">
@@ -74,8 +136,10 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
               value={String(inputs.repayment_months)}
               onChange={(v) => setInput("repayment_months", Number(v))} />
           </Field>
+          {/* State-backed programmes run long grace periods — the bank form's
+              own example is 24 months on a 60-month loan. */}
           <Field label={t("Grace period")} hint={t("months without principal repayment")}>
-            <Seg options={["0","1","3","6"]}
+            <Seg options={["0","2","3","6","12","24"]}
               value={String(inputs.grace_period_months)}
               onChange={(v) => setInput("grace_period_months", Number(v))} />
           </Field>
@@ -84,6 +148,61 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
               value={inputs.repay_freq === "monthly" ? "Monthly" : "Quarterly"}
               onChange={(v) => setInput("repay_freq", v.toLowerCase() as any)} />
           </Field>
+          <Field label={t("Interest rate")} hint={t("% per year")} req>
+            <input className="input" placeholder={t("e.g. 19.5")} inputMode="decimal"
+              value={inputs.interest_rate_pct || ""}
+              onChange={(e) => setInput("interest_rate_pct", Number(e.target.value) || 0)} />
+          </Field>
+          <Field label={t("State fund compensation")} hint={t("% subtracted from the rate")}>
+            <input className="input" placeholder={t("e.g. 4.2")} inputMode="decimal"
+              value={inputs.subsidy_rate_pct || ""}
+              onChange={(e) => setInput("subsidy_rate_pct", Number(e.target.value) || 0)} />
+          </Field>
+        </div>
+
+        {/* Live repayment maths — the numbers the credit officer checks. */}
+        <RepaymentPreview />
+
+        {/* Row 8 — what the credit actually buys. */}
+        <div className="mt-5 pt-5 border-t border-line">
+          <div className="flex items-end justify-between mb-3 gap-3">
+            <div>
+              <div className="label">{t("Goods and services to be purchased")}</div>
+              <div className="text-[11px] text-muted">{t("The bank asks for the items themselves, not only percentages.")}</div>
+            </div>
+            <button
+              onClick={() => setInput("purchase_items", [...inputs.purchase_items, { name: "", qty: 1, unit_cost_uzs: 0 }])}
+              className="text-[11px] font-semibold text-petrol hover:underline"
+            >{t("+ Add item")}</button>
+          </div>
+          {inputs.purchase_items.length === 0 && (
+            <div className="text-[12px] text-muted italic">{t("No items yet — optional, but strengthens the application.")}</div>
+          )}
+          <div className="space-y-2">
+            {inputs.purchase_items.map((it, i) => (
+              <div key={i} className="grid grid-cols-[1fr_80px_150px_32px] gap-2 items-center">
+                <input className="input" placeholder={t("e.g. Coffee machine")}
+                  value={it.name}
+                  onChange={(e) => setInput("purchase_items", inputs.purchase_items.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                <input className="input text-center" placeholder={t("qty")} inputMode="numeric"
+                  value={it.qty || ""}
+                  onChange={(e) => setInput("purchase_items", inputs.purchase_items.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) || 0 } : x))} />
+                <input className="input" placeholder={t("unit price, UZS")}
+                  value={fmt(it.unit_cost_uzs)}
+                  onChange={(e) => setInput("purchase_items", inputs.purchase_items.map((x, j) => j === i ? { ...x, unit_cost_uzs: parse(e.target.value) } : x))} />
+                <button
+                  onClick={() => setInput("purchase_items", inputs.purchase_items.filter((_, j) => j !== i))}
+                  className="text-muted hover:text-rose-500 text-[16px] leading-none"
+                  aria-label={t("Remove")}
+                >×</button>
+              </div>
+            ))}
+          </div>
+          {inputs.purchase_items.length > 0 && (
+            <div className="mt-2 text-[12px] text-navy font-semibold">
+              {t("Items total")}: {fmt(inputs.purchase_items.reduce((a, x) => a + x.qty * x.unit_cost_uzs, 0))} {t("UZS")}
+            </div>
+          )}
         </div>
 
         <div className="mt-5 pt-5 border-t border-line">
@@ -163,25 +282,74 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
         </div>
       </Section>
 
-      {/* Section 2: Collateral & guarantor */}
-      <Section title={t("Collateral & guarantor")} subtitle={t("What secures the loan.")}>
-        <div className="grid grid-cols-2 gap-5">
-          <Field label={t("Collateral type")}>
-            <select className="input"
-              value={inputs.collateral_type}
-              onChange={(e) => setInput("collateral_type", e.target.value as any)}>
-              <option value="">{t("Select…")}</option>
-              <option value="none">{t("None")}</option>
-              <option value="real_estate">{t("Real estate")}</option>
-              <option value="vehicle">{t("Vehicle")}</option>
-              <option value="equipment">{t("Equipment")}</option>
-              <option value="deposit">{t("Cash deposit")}</option>
-            </select>
-          </Field>
-          <Field label={t("Collateral value")} hint={t("UZS · only if applicable")}>
-            <input className="input" placeholder={t("e.g. 50 000 000")}
-              value={fmt(inputs.collateral_value_uzs)}
-              onChange={(e) => setInput("collateral_value_uzs", parse(e.target.value))} />
+      {/* Section 2: Collateral & guarantor — itemised, appraised (form row 12) */}
+      <Section title={t("Collateral & guarantor")} subtitle={t("What secures the loan. The bank requires an independent appraisal per asset.")}>
+        <div className="flex items-end justify-between mb-3 gap-3">
+          <div>
+            <div className="label">{t("Pledged assets")}</div>
+            <div className="text-[11px] text-muted">{t("Each asset valued separately by an independent appraiser.")}</div>
+          </div>
+          <button
+            onClick={() => setInput("collateral_items", [...inputs.collateral_items, { kind: "" as any, description: "", area_sqm: 0, appraised_value_uzs: 0, appraiser: "" }])}
+            className="text-[11px] font-semibold text-petrol hover:underline"
+          >{t("+ Add asset")}</button>
+        </div>
+
+        {inputs.collateral_items.length === 0 && (
+          <div className="text-[12px] text-muted italic mb-3">{t("No collateral pledged — the loan will be assessed as unsecured.")}</div>
+        )}
+
+        <div className="space-y-3">
+          {inputs.collateral_items.map((c, i) => {
+            const upd = (patch: Partial<typeof c>) =>
+              setInput("collateral_items", inputs.collateral_items.map((x, j) => j === i ? { ...x, ...patch } : x));
+            return (
+              <div key={i} className="p-3 rounded-lg border border-line bg-navy/[0.015]">
+                <div className="grid grid-cols-[150px_1fr_32px] gap-2 items-start">
+                  <select className="input" value={c.kind} onChange={(e) => upd({ kind: e.target.value as any })}>
+                    <option value="">{t("Select…")}</option>
+                    <option value="real_estate">{t("Real estate")}</option>
+                    <option value="vehicle">{t("Vehicle")}</option>
+                    <option value="equipment">{t("Equipment")}</option>
+                    <option value="deposit">{t("Cash deposit")}</option>
+                  </select>
+                  <input className="input" placeholder={t("Description and address")}
+                    value={c.description} onChange={(e) => upd({ description: e.target.value })} />
+                  <button
+                    onClick={() => setInput("collateral_items", inputs.collateral_items.filter((_, j) => j !== i))}
+                    className="text-muted hover:text-rose-500 text-[16px] leading-none pt-2"
+                    aria-label={t("Remove")}
+                  >×</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <input className="input" placeholder={t("appraised value, UZS")}
+                    value={fmt(c.appraised_value_uzs)} onChange={(e) => upd({ appraised_value_uzs: parse(e.target.value) })} />
+                  {c.kind === "real_estate" && (
+                    <input className="input" placeholder={t("area, m²")} inputMode="decimal"
+                      value={c.area_sqm || ""} onChange={(e) => upd({ area_sqm: Number(e.target.value) || 0 })} />
+                  )}
+                  <input className="input" placeholder={t("appraiser")}
+                    value={c.appraiser} onChange={(e) => upd({ appraiser: e.target.value })} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {collateralTotal > 0 && (
+          <div className="mt-3 text-[12px] text-navy font-semibold">
+            {t("Total appraised value")}: {fmt(collateralTotal)} {t("UZS")}
+            {inputs.loan_uzs > 0 && (
+              <span className={clsx("ml-2 px-2 py-0.5 rounded text-[11px]", ltvTone)}>
+                LTV {Math.round((inputs.loan_uzs / collateralTotal) * 100)}%
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-5 mt-5 pt-5 border-t border-line">
+          <Field label={t("State guarantee fund used?")} hint={t("Entrepreneurship Support Fund")}>
+            <YesNo value={inputs.state_guarantee_used} onChange={(v) => setInput("state_guarantee_used", v)} />
           </Field>
           <Field label={t("Already pledged elsewhere?")}>
             <YesNo value={inputs.collateral_pledged_elsewhere} onChange={(v) => setInput("collateral_pledged_elsewhere", v)} />
@@ -190,13 +358,45 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
             <YesNo value={inputs.has_cosigner} onChange={(v) => setInput("has_cosigner", v)} />
           </Field>
           {inputs.has_cosigner && (
-            <Field label={t("Co-signer relationship")} full>
+            <Field label={t("Co-signer relationship")}>
               <input className="input" placeholder={t("e.g. spouse, parent, business partner")}
                 value={inputs.cosigner_relationship}
                 onChange={(e) => setInput("cosigner_relationship", e.target.value)} />
             </Field>
           )}
         </div>
+      </Section>
+
+      {/* Section: trading history — bank form row 6 */}
+      <Section title={t("Trading history")} subtitle={t("The bank asks for the last 12 months of account turnover.")}>
+        <div className="grid grid-cols-2 gap-5">
+          <Field label={t("Is the business already trading?")} hint={t("changes how the loan is assessed")}>
+            <YesNo value={inputs.is_existing_business} onChange={(v) => setInput("is_existing_business", v)} />
+          </Field>
+          <Field label={t("Taxpayer ID (STIR)")} hint={t("optional · if already registered")}>
+            <input className="input" placeholder={t("e.g. 303 909 808")}
+              value={inputs.stir}
+              onChange={(e) => setInput("stir", e.target.value)} />
+          </Field>
+        </div>
+        {inputs.is_existing_business ? (
+          <div className="grid grid-cols-2 gap-5 mt-4">
+            <Field label={t("12-month turnover — credit (in)")} hint={t("UZS · money received")}>
+              <input className="input" placeholder={t("e.g. 122 040 000")}
+                value={fmt(inputs.turnover_12m_credit_uzs)}
+                onChange={(e) => setInput("turnover_12m_credit_uzs", parse(e.target.value))} />
+            </Field>
+            <Field label={t("12-month turnover — debit (out)")} hint={t("UZS · money paid out")}>
+              <input className="input" placeholder={t("e.g. 122 040 000")}
+                value={fmt(inputs.turnover_12m_debit_uzs)}
+                onChange={(e) => setInput("turnover_12m_debit_uzs", parse(e.target.value))} />
+            </Field>
+          </div>
+        ) : (
+          <div className="mt-3 text-[12px] text-muted italic">
+            {t("New business — the agents will project revenue instead of reading turnover history.")}
+          </div>
+        )}
       </Section>
 
       {/* Section 3: Founder financial standing */}
@@ -347,6 +547,15 @@ function PctInput({ label, color, value, onChange }: { label: string; color: str
 function Slice({ color, pct }: { color: string; pct: number }) {
   if (!pct) return null;
   return <div className={clsx("h-full transition-all", color)} style={{ width: `${Math.min(100, pct)}%` }} />;
+}
+function Mini({ k, v, sub }: { k: string; v: string; sub?: string }) {
+  return (
+    <div className="p-2.5 rounded-lg bg-navy/[0.03] border border-line">
+      <div className="text-[10px] uppercase tracking-wider text-muted font-semibold truncate">{k}</div>
+      <div className="font-display font-bold text-navy text-[17px] leading-tight mt-0.5">{v}</div>
+      {sub && <div className="text-[10px] text-muted mt-0.5 truncate">{sub}</div>}
+    </div>
+  );
 }
 function Recap({ k, v, from }: { k: string; v: string; from: string }) {
   const ok = v !== "—";

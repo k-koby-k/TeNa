@@ -12,8 +12,7 @@ import { User, Banknote, PieChart, Phone } from "lucide-react";
 import clsx from "clsx";
 import { useScenario } from "../state";
 import { useT } from "../i18n";
-
-const SQB_NOMINAL_RATE = 0.22; // typical Tashkent SME nominal annual rate; surface this so the user sees the assumption.
+import { debtService, dscr } from "../finance";
 
 /* ---------------------------------------------------------------- *
  * Borrower & founder — its own card, business owner front and centre. *
@@ -75,25 +74,33 @@ export function LoanCard() {
     const principal = inputs.loan_uzs;
     const tenor = inputs.repayment_months || 24;
     const grace = inputs.grace_period_months || 0;
-    const r = SQB_NOMINAL_RATE / 12;
-    // Standard amortising formula over (tenor - grace) months.
-    const payments = Math.max(1, tenor - grace);
-    const monthly = principal > 0 && r > 0
-      ? Math.round((principal * r) / (1 - Math.pow(1 + r, -payments)))
+
+    // Same shared annuity the credit card and the credit score use, at the
+    // loan's actual rate (bank form row 10) rather than a hardcoded average —
+    // otherwise this card and the Overview disagree on the same screen.
+    const svc = debtService(
+      principal, inputs.interest_rate_pct, inputs.subsidy_rate_pct, tenor, grace,
+    );
+    const monthly = Math.round(svc.peakPayment);
+    const totalInterest = svc.totalInterest;
+
+    // Net operating income — revenue less COGS, payroll, other opex and rent.
+    // Payroll was previously omitted here, which inflated DSCR.
+    const grossPct = result?.financial.gross_margin_pct ?? 0;
+    const monthlyRevenueM = (inputs.average_ticket_uzs * inputs.customers_per_day * 30) / 1_000_000;
+    const monthlyNetM = grossPct > 0 && monthlyRevenueM > 0
+      ? Math.max(0,
+          monthlyRevenueM * (grossPct / 100)
+          - (inputs.payroll_m_uzs ?? 0)
+          - inputs.monthly_rent_uzs / 1_000_000
+          - (inputs.other_monthly_costs_m_uzs ?? 0))
       : 0;
-    const totalInterest = monthly * payments - principal;
-    // Debt-Service Coverage: how many times the inferred monthly net income
-    // covers the loan payment. Pull from financial agent's inferred numbers.
-    const monthlyNetM =
-      (result?.financial.gross_margin_pct ?? 0) > 0 && (inputs.average_ticket_uzs * inputs.customers_per_day) > 0
-        ? Math.max(0,
-            (inputs.average_ticket_uzs * inputs.customers_per_day * 30 / 1_000_000)
-            * (result!.financial.gross_margin_pct / 100)
-            - inputs.monthly_rent_uzs / 1_000_000
-            - (inputs.other_monthly_costs_m_uzs ?? 0))
-        : 0;
-    const dscr = monthly > 0 ? Number((monthlyNetM * 1_000_000 / monthly).toFixed(2)) : 0;
-    return { principal, tenor, grace, monthly, totalInterest, dscr, monthlyNetM };
+    const ratio = dscr(monthlyNetM * 12 * 1_000_000, svc.peakPayment);
+    return {
+      principal, tenor, grace, monthly, totalInterest,
+      dscr: ratio ?? 0, monthlyNetM,
+      effectiveRatePct: svc.effectiveRatePct,
+    };
   }, [inputs, result]);
 
   const useOfFunds = [
@@ -124,7 +131,7 @@ export function LoanCard() {
           <LineRow k={t("Tenor")}         v={deal.tenor ? `${deal.tenor} ${t("months")}` : "—"} />
           <LineRow k={t("Grace")}         v={deal.grace ? `${deal.grace} ${t("months")}` : "—"} />
           <LineRow k={t("Frequency")}     v={cap(inputs.repay_freq)} />
-          <LineRow k={t("Monthly pay·t")} v={deal.monthly ? `${fmt(deal.monthly)} UZS` : "—"} hint="@ 22% p.a." />
+          <LineRow k={t("Monthly pay·t")} v={deal.monthly ? `${fmt(deal.monthly)} UZS` : "—"} hint={`@ ${deal.effectiveRatePct.toFixed(1)}% p.a.`} />
           <LineRow k={t("Total interest")} v={deal.totalInterest > 0 ? `${fmt(Math.round(deal.totalInterest))} UZS` : "—"} />
           <LineRow
             k="DSCR"

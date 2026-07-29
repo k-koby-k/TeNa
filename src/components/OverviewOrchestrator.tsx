@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { api, type LocationAgentResult, type PlaceHit, type MarketAgentResult, type FinancialsAgentResult, type AnalyzeResponse, type SynthesizeResult } from "../api";
-import { useScenario, type ScenarioInputs, DEFAULT_RESULT, DEMO_LOCATION_AGENT, DEMO_SYNTHESIS } from "../state";
+import { useScenario, type ScenarioInputs, type Collateral, DEFAULT_RESULT, DEMO_LOCATION_AGENT, DEMO_SYNTHESIS } from "../state";
+import { debtService, dscr, ltv } from "../finance";
 import { useT } from "../i18n";
 
 type AgentKey = "location" | "market" | "financials" | "synthesis";
@@ -58,7 +59,7 @@ async function withRetry<T>(fn: () => Promise<T>, label = "agent"): Promise<T> {
 }
 
 export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: ReactNode } = {}) {
-  const { inputs, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis, demoCanned } = useScenario();
+  const { inputs, setInput, result, setResult, locationAgent, setLocationAgent, synthesis, setSynthesis, demoCanned } = useScenario();
   const t = useT();
   const [run, setRun] = useState<RunState>(initialState);
   const running = Object.values(run).some((s) => s.status === "running");
@@ -185,7 +186,13 @@ export function OverviewOrchestrator({ afterAgentCard }: { afterAgentCard?: Reac
       withRetry(callFinancials),
     ]);
 
-    if (locR.status === "fulfilled") setLocationAgent(locR.value);
+    if (locR.status === "fulfilled") {
+      setLocationAgent(locR.value);
+      // The reverse geocode already knows the mahalla — carry it into the
+      // bank-form address fields rather than asking the user twice.
+      if (locR.value.neighborhood && !inputs.mfy) setInput("mfy", locR.value.neighborhood);
+      if (locR.value.district && !inputs.district) setInput("district", locR.value.district);
+    }
 
     // Build the dashboard result entirely from agent output. Anything an
     // agent didn't produce stays at 0/empty so the dashboard cards render
@@ -849,15 +856,58 @@ function deriveCredit(fin: FinancialsAgentResult, inputs: ScenarioInputs) {
   const loanM = Math.round((inputs.loan_uzs || 0) / 1_000_000);
   const otherIncomeM = Math.max(0.1, inputs.other_monthly_income_m_uzs || 0);
   const monthlyDebtM = inputs.existing_monthly_debts_m_uzs || 0;
-  const monthlyRepaymentM = inputs.repayment_months > 0 ? loanM / inputs.repayment_months : 0;
+
+  // Real annuity payment at the loan's actual rate, net of any state
+  // compensation, amortised over the post-grace months (bank form rows
+  // 10 + 11). Previously this was `principal / months` — no interest at all,
+  // which understated the instalment by ~30% at the form's own example terms
+  // and so understated DTI.
+  const svc = debtService(
+    inputs.loan_uzs || 0,
+    inputs.interest_rate_pct,
+    inputs.subsidy_rate_pct,
+    inputs.repayment_months,
+    inputs.grace_period_months,
+  );
+  const monthlyRepaymentM = svc.peakPayment / 1_000_000;
   const dti = Number(((monthlyDebtM + monthlyRepaymentM) / otherIncomeM).toFixed(2));
 
+  // Collateral: prefer the itemised, independently appraised list (form row
+  // 12); fall back to the single legacy value when no items are entered.
+  const itemisedCollateral = (inputs.collateral_items ?? [])
+    .reduce((acc, c) => acc + (c.appraised_value_uzs || 0), 0);
+  const collateralValue = itemisedCollateral || inputs.collateral_value_uzs || 0;
+  const collateralKinds = new Set(
+    (inputs.collateral_items ?? []).map((c) => c.kind).filter(Boolean),
+  );
+  const hasKind = (k: Collateral) =>
+    collateralKinds.has(k) || (collateralKinds.size === 0 && inputs.collateral_type === k);
+
+  const loanToValue = ltv(inputs.loan_uzs || 0, collateralValue);
+
+  // DSCR — annual net operating income over annual debt service.
+  // For a trading business the income base is real turnover (form row 6);
+  // for a new one it's the viability agent's projected revenue. In both
+  // cases NOI is revenue less COGS, payroll, other opex and rent.
+  const inf = fin.inferred;
+  const monthlyRentM = (inputs.monthly_rent_uzs || 0) / 1_000_000;
+  const monthlyRevenueM = inputs.is_existing_business && inputs.turnover_12m_credit_uzs > 0
+    ? inputs.turnover_12m_credit_uzs / 12 / 1_000_000
+    : (inf?.monthly_revenue_m_uzs ?? 0);
+  const cogsPct = inf?.cogs_pct ?? (100 - (fin.gross_margin_pct || 0));
+  const monthlyNoiM = monthlyRevenueM * (1 - cogsPct / 100)
+    - (inf?.payroll_m_uzs ?? 0)
+    - (inf?.other_opex_m_uzs ?? 0)
+    - monthlyRentM;
+  const dscrValue = dscr(monthlyNoiM * 12 * 1_000_000, svc.peakPayment);
+
   // Readiness: starts from financial viability, then adjusted for collateral,
-  // cosigner, founder track record and DTI.
+  // cosigner, founder track record, DTI, DSCR and leverage.
   let readiness = fin.score;
-  if (inputs.collateral_type === "real_estate") readiness += 12;
-  else if (inputs.collateral_type === "vehicle" || inputs.collateral_type === "deposit") readiness += 8;
-  else if (inputs.collateral_type === "equipment") readiness += 5;
+  if (hasKind("real_estate")) readiness += 12;
+  else if (hasKind("vehicle") || hasKind("deposit")) readiness += 8;
+  else if (hasKind("equipment")) readiness += 5;
+  if (inputs.state_guarantee_used) readiness += 6;
   if (inputs.has_cosigner) readiness += 6;
   if (inputs.business_insurance_planned) readiness += 3;
   if (inputs.owner_experience === "established") readiness += 8;
@@ -866,13 +916,20 @@ function deriveCredit(fin: FinancialsAgentResult, inputs: ScenarioInputs) {
   readiness -= (inputs.prior_business_failures || 0) * 6;
   if (dti > 0.5) readiness -= 10;
   else if (dti > 0.35) readiness -= 4;
+  if (dscrValue != null) {
+    if (dscrValue < 1.0) readiness -= 12;
+    else if (dscrValue < 1.25) readiness -= 5;
+    else if (dscrValue >= 1.75) readiness += 5;
+  }
+  if (loanToValue != null && loanToValue > 1.0) readiness -= 6;
   readiness = Math.max(0, Math.min(100, Math.round(readiness)));
 
-  // Suggest a product based on collateral + loan size.
+  // Suggest a product based on what's actually pledged + loan size.
   const product =
     loanM === 0 ? "No loan requested"
-    : inputs.collateral_type === "equipment" ? "Equipment leasing"
-    : inputs.collateral_type === "real_estate" ? "Secured SME term loan"
+    : hasKind("equipment") ? "Equipment leasing"
+    : hasKind("real_estate") ? "Secured SME term loan"
+    : inputs.state_guarantee_used ? "SME term loan + guarantee"
     : loanM >= 200 ? "SME term loan + guarantee"
     : "SME working capital";
 
@@ -882,6 +939,14 @@ function deriveCredit(fin: FinancialsAgentResult, inputs: ScenarioInputs) {
     credit_readiness: readiness,
     product,
     score: readiness,
+    // Bank-form derived metrics, surfaced for the credit card.
+    monthly_payment_uzs: Math.round(svc.peakPayment),
+    grace_payment_uzs: Math.round(svc.gracePayment),
+    total_interest_uzs: Math.round(svc.totalInterest),
+    effective_rate_pct: svc.effectiveRatePct,
+    dscr: dscrValue,
+    ltv: loanToValue,
+    collateral_value_uzs: collateralValue,
   };
 }
 

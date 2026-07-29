@@ -26,6 +26,24 @@ export type SalesChannel  = "" | "storefront" | "storefront_online" | "online_on
 export type Collateral    = "" | "none" | "real_estate" | "vehicle" | "equipment" | "deposit";
 export type RepayFreq     = "monthly" | "quarterly";
 
+/** One pledged asset, as the bank form's row 12 wants it: itemised, with an
+ *  independent appraiser's valuation rather than one blended number. */
+export interface CollateralItem {
+  kind: Collateral;
+  description: string;      // e.g. "нотурар ферма биноси, Бўстонлиқ тумани"
+  area_sqm: number;         // 0 when not real estate
+  appraised_value_uzs: number;
+  appraiser: string;        // independent valuer that signed the appraisal
+}
+
+/** One line of what the credit actually buys — form row 8 wants the goods
+ *  themselves ("4 юриб суғорадиган машина ва 2 трактор"), not just a % split. */
+export interface PurchaseItem {
+  name: string;
+  qty: number;
+  unit_cost_uzs: number;
+}
+
 export interface ScenarioInputs {
   // ============ PROFILE — identity, concept, founder ============
   business_name: string;
@@ -101,6 +119,40 @@ export interface ScenarioInputs {
   other_monthly_costs_m_uzs: number;
   revenue_ramp_months: number;
 
+  // ============ BANK SUBMISSION — "Loyiha pasporti" form fields ============
+  // Every field below maps to a numbered row on the real bank loan
+  // application form. See src/finance.ts for the maths they unlock.
+
+  /** Row 1 — Корхона СТИРи. Optional: many founders apply before registering,
+   *  so this is "provide if you have it", never a gate. */
+  stir: string;
+  /** Row 6 implies an already-trading enterprise. Switches the app between
+   *  the projection path (new business) and the real-history path. */
+  is_existing_business: boolean;
+  /** Row 6 — Охирги 12 ойлик пул айланмаси. Debit = money out, credit = in. */
+  turnover_12m_debit_uzs: number;
+  turnover_12m_credit_uzs: number;
+  /** Row 10 — Кредит фоизи, and the state fund's compensation against it. */
+  interest_rate_pct: number;
+  subsidy_rate_pct: number;
+  /** Row 12 — itemised, independently appraised collateral, plus the
+   *  Entrepreneurship Support Fund's guarantee (кафиллик хизмати). */
+  collateral_items: CollateralItem[];
+  state_guarantee_used: boolean;
+  /** Row 8 — what the credit buys, line by line. */
+  purchase_items: PurchaseItem[];
+  /** Row 3 — the administrative hierarchy the form uses. `district` already
+   *  holds the tuman; these add the two levels around it. */
+  viloyat: string;
+  mfy: string;
+  /** Cover letter — which bank/branch the application is addressed to, the
+   *  state programme it's filed under, and the account-transfer consent that
+   *  applies when the applicant banks elsewhere. */
+  target_bank: string;
+  target_branch: string;
+  state_program: string;
+  account_transfer_consent: boolean;
+
   // --- Misc / legacy ---
   notes: string;
   payroll_m_uzs: number;
@@ -153,11 +205,35 @@ const DEFAULT_INPUTS: ScenarioInputs = {
   collateral_type: "deposit", collateral_value_uzs: 20_000_000,
   collateral_pledged_elsewhere: false,
   has_cosigner: false, cosigner_relationship: "",
-  existing_monthly_debts_m_uzs: 0, other_monthly_income_m_uzs: 3,
+  existing_monthly_debts_m_uzs: 0, other_monthly_income_m_uzs: 8,
   dependents_count: 1,
   top_risk_self_identified: "Yozgi ta'til davrida talabalar sonining keskin kamayishi",
   contingency_runway_months: 3, business_insurance_planned: true,
   other_monthly_costs_m_uzs: 4, revenue_ramp_months: 3,
+
+  // Bank submission block — demo values consistent with the QarDU scenario.
+  stir: "",                       // demo founder hasn't registered yet
+  is_existing_business: false,
+  turnover_12m_debit_uzs: 0, turnover_12m_credit_uzs: 0,
+  interest_rate_pct: 19.5, subsidy_rate_pct: 4.2,
+  // Thin collateral covered by the state guarantee — the same shape as the
+  // bank form's own worked example (4.6bn credit against 4.7bn appraised,
+  // topped up by the Entrepreneurship Support Fund's guarantee).
+  collateral_items: [
+    { kind: "deposit", description: "Bank depoziti", area_sqm: 0,
+      appraised_value_uzs: 20_000_000, appraiser: "" },
+    { kind: "vehicle", description: "Chevrolet Cobalt, 2021", area_sqm: 0,
+      appraised_value_uzs: 45_000_000, appraiser: "\"Baho Konsalt\" MChJ" },
+  ],
+  state_guarantee_used: true,
+  purchase_items: [
+    { name: "Professional qahva mashinasi", qty: 1, unit_cost_uzs: 22_000_000 },
+    { name: "Uzun ish stollari va o'rindiqlar", qty: 12, unit_cost_uzs: 1_400_000 },
+    { name: "Printer va konspekt chop etish uskunasi", qty: 2, unit_cost_uzs: 3_500_000 },
+  ],
+  viloyat: "Qashqadaryo", mfy: "Navoiy mahallasi",
+  target_bank: "", target_branch: "",
+  state_program: "", account_transfer_consent: false,
 
   notes: "",
   payroll_m_uzs: 12, cogs_pct: 35, margin_pct: 28,
@@ -197,6 +273,19 @@ const EMPTY_INPUTS: ScenarioInputs = {
   top_risk_self_identified: "",
   contingency_runway_months: 0, business_insurance_planned: false,
   other_monthly_costs_m_uzs: 0, revenue_ramp_months: 0,
+
+  stir: "",
+  is_existing_business: false,
+  turnover_12m_debit_uzs: 0, turnover_12m_credit_uzs: 0,
+  // Not zeroed: a blank rate would silently reintroduce the interest-free
+  // repayment bug this replaced. 19.5% is the rate on the bank's own form.
+  interest_rate_pct: 19.5, subsidy_rate_pct: 0,
+  collateral_items: [],
+  state_guarantee_used: false,
+  purchase_items: [],
+  viloyat: "", mfy: "",
+  target_bank: "", target_branch: "",
+  state_program: "", account_transfer_consent: false,
 
   notes: "",
   payroll_m_uzs: 0, cogs_pct: 0, margin_pct: 0,
@@ -342,7 +431,18 @@ export const DEFAULT_RESULT: AnalyzeResponse = {
   // when folded into the composite. See deriveCompetition() in
   // OverviewOrchestrator.tsx: score ~= (saturation_index + density)/2.
   competition: { direct_competitors: 0, competitor_density_index: 6, failure_probability_pct: 14, risk_level: "Low", score: 17 },
-  credit: { suggested_loan_m_uzs: 60, dti: 0.18, credit_readiness: 82, product: DEMO_SYNTHESIS.bank_product, score: 79 },
+  // Credit metrics computed from the demo inputs at the bank form's own terms
+  // (19.5% headline − 4.2% state compensation = 15.3%, 24 months, 2 grace):
+  //   peak instalment 3.14M/mo · grace instalment 0.77M/mo · interest 10.7M
+  //   DSCR  = 226M annual NOI / 37.7M annual debt service = 6.0
+  //   LTV   = 60M loan / 65M appraised collateral = 0.92
+  credit: {
+    suggested_loan_m_uzs: 60, dti: 0.39, credit_readiness: 82,
+    product: DEMO_SYNTHESIS.bank_product, score: 79,
+    monthly_payment_uzs: 3_144_868, grace_payment_uzs: 765_000,
+    total_interest_uzs: 10_717_102, effective_rate_pct: 15.3,
+    dscr: 5.99, ltv: 0.92, collateral_value_uzs: 65_000_000,
+  },
   factors: {
     positives: DEMO_SYNTHESIS.positives,
     risks: DEMO_SYNTHESIS.risks,

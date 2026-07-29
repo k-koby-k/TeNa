@@ -171,6 +171,28 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
           </div>
         </div>
 
+        {/* Administrative address — the hierarchy the bank form uses (row 3).
+            The map pin fills district; viloyat and MFY complete it, and MFY
+            is what state programmes are scoped by. */}
+        <div className="card p-5 space-y-4">
+          <div className="label">{t("Administrative address")}</div>
+          <Field label={t("Region (viloyat)")} hint={t("bank form requirement")}>
+            <input className="input" placeholder={t("e.g. Qashqadaryo")}
+              value={inputs.viloyat}
+              onChange={(e) => setInput("viloyat", e.target.value)} />
+          </Field>
+          <Field label={t("Neighbourhood (MFY)")} hint={t("state programmes are scoped by MFY")}>
+            <input className="input" placeholder={t("e.g. Navoiy mahallasi")}
+              value={inputs.mfy}
+              onChange={(e) => setInput("mfy", e.target.value)} />
+          </Field>
+          {inputs.district && (
+            <div className="text-[11px] text-muted">
+              {t("District (tuman)")}: <span className="text-navy font-semibold">{inputs.district}</span> · {t("from map pin")}
+            </div>
+          )}
+        </div>
+
         {/* Site facts */}
         <div className="card p-5 space-y-4">
           <div className="label">{t("Site facts")}</div>

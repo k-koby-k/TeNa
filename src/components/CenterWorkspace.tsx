@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import clsx from "clsx";
 import { useDerived } from "../state";
+import { debtService, dscrBand, ltv, ltvBand, equityBand, equitySharePct } from "../finance";
 
 function RecHeader() {
   const d = useDerived();
@@ -223,9 +224,27 @@ function FactorsCard() {
 
 function BankActionCard() {
   const d = useDerived();
+  const { inputs } = useScenario();
   const t = useT();
   if (!d) return null;
   const { bank, nextActions } = d;
+
+  // Bank-form metrics (rows 6/9/10/11/12). Prefer what the analysis produced;
+  // fall back to recomputing from inputs so a scenario restored from history
+  // (saved before these fields existed) still shows real numbers.
+  const svc = debtService(
+    inputs.loan_uzs, inputs.interest_rate_pct, inputs.subsidy_rate_pct,
+    inputs.repayment_months, inputs.grace_period_months,
+  );
+  const collateralTotal = bank.collateral_value_uzs
+    ?? ((inputs.collateral_items ?? []).reduce((a, c) => a + (c.appraised_value_uzs || 0), 0)
+        || inputs.collateral_value_uzs || 0);
+  const loanToValue = bank.ltv !== undefined ? bank.ltv : ltv(inputs.loan_uzs, collateralTotal);
+  const monthlyPayment = bank.monthly_payment_uzs ?? svc.peakPayment;
+  const effectiveRate = bank.effective_rate_pct ?? svc.effectiveRatePct;
+  const dscrValue = bank.dscr ?? null;
+  const tone = (b: "good" | "warn" | "bad") =>
+    b === "good" ? "text-emerald" : b === "warn" ? "text-amber" : "text-rose-600";
   return (
     <div className="card p-5">
       <div className="flex items-start gap-3">
@@ -249,9 +268,45 @@ function BankActionCard() {
         </div>
         <div>
           <div className="label">{t("Tenor")}</div>
-          <div className="text-sm font-semibold text-navy mt-1">{t("24 months · 3M grace")}</div>
+          <div className="text-sm font-semibold text-navy mt-1">
+            {inputs.repayment_months} {t("months")}
+            {inputs.grace_period_months > 0 && <span className="text-muted font-normal"> · {inputs.grace_period_months} {t("mo grace")}</span>}
+          </div>
         </div>
       </div>
+
+      {/* Credit metrics the bank's own form implies: real debt service,
+          DSCR, LTV. */}
+      {inputs.loan_uzs > 0 && (
+        <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-line">
+          <div>
+            <div className="label">{t("Monthly payment")}</div>
+            <div className="text-sm font-semibold text-navy mt-1">
+              {(monthlyPayment / 1_000_000).toFixed(1)}M
+              <span className="text-muted font-normal text-[11px]"> @ {effectiveRate.toFixed(1)}%</span>
+            </div>
+          </div>
+          <div>
+            <div className="label">DSCR</div>
+            <div className={clsx("text-sm font-semibold mt-1", dscrValue == null ? "text-muted" : tone(dscrBand(dscrValue)))}>
+              {dscrValue == null ? "—" : dscrValue.toFixed(2)}
+              <span className="text-muted font-normal text-[11px]"> {t("min 1.25")}</span>
+            </div>
+          </div>
+          <div>
+            <div className="label">LTV</div>
+            <div className={clsx("text-sm font-semibold mt-1", loanToValue == null ? "text-muted" : tone(ltvBand(loanToValue)))}>
+              {loanToValue == null ? t("unsecured") : `${Math.round(loanToValue * 100)}%`}
+            </div>
+          </div>
+          <div>
+            <div className="label">{t("Own funds")}</div>
+            <div className={clsx("text-sm font-semibold mt-1", tone(equityBand(equitySharePct(inputs.budget_uzs, inputs.loan_uzs))))}>
+              {equitySharePct(inputs.budget_uzs, inputs.loan_uzs) ?? "—"}%
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mt-4">
         <div className="label flex items-center gap-1.5"><ShieldCheck size={12} /> {t("Conditions & next actions")}</div>
         <ul className="mt-2 space-y-1.5 text-sm text-navy/85">

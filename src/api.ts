@@ -32,7 +32,20 @@ export interface DemandBlock { forecast_index: number[]; peak_periods: string[];
 export interface LocationBlock { foot_traffic_per_day: number; competitors_within_500m: number; walkability: number; visibility: number; score: number; }
 export interface FinancialBlock { breakeven_month: number; burn_rate_m_uzs: number; roi_12mo_pct: number; gross_margin_pct: number; score: number; }
 export interface CompetitionBlock { direct_competitors: number; competitor_density_index: number; failure_probability_pct: number; risk_level: RiskLevel; score: number; }
-export interface CreditBlock { suggested_loan_m_uzs: number; dti: number; credit_readiness: number; product: string; score: number; }
+export interface CreditBlock {
+  suggested_loan_m_uzs: number; dti: number; credit_readiness: number; product: string; score: number;
+  // Derived from the bank's own loan-application form (rows 6/9/10/11/12).
+  // Optional so scenarios saved before these existed still hydrate cleanly.
+  monthly_payment_uzs?: number;
+  grace_payment_uzs?: number;
+  total_interest_uzs?: number;
+  effective_rate_pct?: number;
+  /** Debt Service Coverage Ratio — null when there's no debt service. */
+  dscr?: number | null;
+  /** Loan-to-Value against appraised collateral — null when unsecured. */
+  ltv?: number | null;
+  collateral_value_uzs?: number;
+}
 export interface FactorList { positives: string[]; risks: string[]; next_actions: string[]; }
 export interface Verdict { label: string; short_label: ShortVerdict; confidence: number; composite_score: number; blurb: string; }
 export interface ModelMeta { id: string; name: string; version: string; confidence: number; last_retrain: string; }
