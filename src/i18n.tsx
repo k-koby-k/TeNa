@@ -86,7 +86,8 @@ const DICT: Record<string, { uz: string }> = {
   // === Location screen ===
   "Step 2 · Location & site":             { uz: "Qadam 2 · Joylashuv va manzil" },
   "Where will it open?":                  { uz: "Qayerda ochiladi?" },
-  "Search a place in Tashkent":           { uz: "Toshkentda joy qidirish" },
+  // City-neutral: the app is used outside Tashkent too (the demo pin is in Qarshi).
+  "Search a place":                       { uz: "Joy qidirish" },
   "Site facts":                           { uz: "Manzil ma'lumotlari" },
   "Site size":                            { uz: "Manzil maydoni" },
   "Monthly rent":                         { uz: "Oylik ijara" },
@@ -220,15 +221,18 @@ const DICT: Record<string, { uz: string }> = {
   "e.g. 122 040 000":                     { uz: "masalan, 122 040 000" },
   "New business — the agents will project revenue instead of reading turnover history.":
                                           { uz: "Yangi biznes — agentlar aylanma tarixini o'qish o'rniga daromadni bashorat qiladi." },
-  "Administrative address":               { uz: "Ma'muriy manzil" },
-  "Region (viloyat)":                     { uz: "Viloyat" },
-  "bank form requirement":                { uz: "bank formasi talabi" },
-  "e.g. Qashqadaryo":                     { uz: "masalan, Qashqadaryo" },
-  "Neighbourhood (MFY)":                  { uz: "Mahalla (MFY)" },
-  "state programmes are scoped by MFY":   { uz: "davlat dasturlari MFY bo'yicha belgilanadi" },
-  "e.g. Navoiy mahallasi":                { uz: "masalan, Navoiy mahallasi" },
-  "District (tuman)":                     { uz: "Tuman" },
-  "from map pin":                         { uz: "xarita belgisidan" },
+  // Address levels the map pin resolves to (read-only chips).
+  "Viloyat":                              { uz: "Viloyat" },
+  "City":                                 { uz: "Shahar" },
+  "Tuman":                                { uz: "Tuman" },
+  "MFY":                                  { uz: "MFY" },
+  "Street":                               { uz: "Ko'cha" },
+  "Resolving address…":                   { uz: "Manzil aniqlanmoqda..." },
+  "Address could not be resolved — the agent will retry during analysis.":
+                                          { uz: "Manzilni aniqlab bo'lmadi — agent tahlil vaqtida qayta urinadi." },
+  "optional":                             { uz: "ixtiyoriy" },
+  "Banks ask for this if the business is registered — you can add it later.":
+                                          { uz: "Biznes ro'yxatdan o'tgan bo'lsa banklar buni so'raydi — keyinroq ham qo'shishingiz mumkin." },
   "mo grace":                             { uz: "oy imtiyoz" },
   "min 1.25":                             { uz: "min 1.25" },
   "unsecured":                            { uz: "ta'minlanmagan" },

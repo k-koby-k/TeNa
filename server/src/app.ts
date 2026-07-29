@@ -152,6 +152,27 @@ export function createApp(opts: AppOptions): Hono<{ Variables: Vars }> {
     }
   });
 
+  /** Resolve a pin into the administrative hierarchy the bank form needs
+   *  (виloyat / tuman / MFY). The map already knows where it is, so this
+   *  fills those fields instead of asking the user for them again. */
+  app.get("/api/geocode/reverse", async (c) => {
+    const lat = Number(c.req.query("lat"));
+    const lng = Number(c.req.query("lng"));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return c.json({ error: "bad_request", detail: "lat and lng are required" }, 400);
+    }
+    try {
+      const { reverseGeocode } = await import("./agents/geocode.js");
+      return c.json(await reverseGeocode(lat, lng));
+    } catch (e: any) {
+      console.error("[geocode/reverse]", e);
+      return c.json({
+        district: null, neighborhood: null, road: null,
+        display: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, viloyat: null, city: null,
+      });
+    }
+  });
+
   // --- Agent endpoints ---------------------------------------------------
   app.post("/api/agent/location", async (c) => {
     const body = await c.req.json<{ lat: number; lng: number; business_type: string; district?: string; format?: any }>();

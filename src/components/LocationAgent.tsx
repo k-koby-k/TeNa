@@ -8,7 +8,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Search, X, Target, Info } from "lucide-react";
 import clsx from "clsx";
-import { api, type PlaceHit } from "../api";
+import { api, type PlaceHit, type ReverseGeocodeResult } from "../api";
 import { useScenario } from "../state";
 import type { ViewKey } from "./Sidebar";
 import { WizardSteps, WizardFooter } from "./Wizard";
@@ -33,6 +33,8 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
   const siteMarker = useRef<L.Marker | null>(null);
   const radiusLayer = useRef<L.LayerGroup | null>(null);
 
+  const [resolved, setResolved] = useState<ReverseGeocodeResult | null>(null);
+  const [resolving, setResolving] = useState(false);
   const [coords, setCoords] = useState<[number, number] | null>(
     inputs.pin_lat && inputs.pin_lng ? [inputs.pin_lat, inputs.pin_lng] : null,
   );
@@ -70,6 +72,30 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
     L.circle([lat, lng], { radius: 1000, color: "#1B4965", weight: 1, dashArray: "4 6", fillOpacity: 0 }).addTo(radiusLayer.current!);
     if (recenter) mapRef.current.setView([lat, lng], 16);
   }
+
+  // Resolve the pin into viloyat / tuman / MFY. The bank's form needs all
+  // three (row 3) and the map already knows them — so they're derived here
+  // rather than asked for a second time.
+  useEffect(() => {
+    if (!coords) { setResolved(null); return; }
+    let cancelled = false;
+    const [lat, lng] = coords;
+    const timer = setTimeout(async () => {
+      setResolving(true);
+      try {
+        const geo = await api.geocodeReverse(lat, lng);
+        if (cancelled) return;
+        setResolved(geo);
+        if (geo.viloyat)      setInput("viloyat", geo.viloyat);
+        if (geo.city)         setInput("city", geo.city);
+        if (geo.district)     setInput("district", geo.district);
+        if (geo.neighborhood) setInput("mfy", geo.neighborhood);
+      } catch { /* keep whatever we had */ }
+      finally { if (!cancelled) setResolving(false); }
+    }, 400); // Nominatim policy — debounce while the user drags the pin.
+    return () => { cancelled = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coords?.[0], coords?.[1]]);
 
   useEffect(() => {
     const q = query.trim();
@@ -113,7 +139,7 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
           {/* Search bar — proper input field, can't be missed */}
           <div className="card p-4">
             <label className="label flex items-center gap-1.5 mb-2">
-              <Search size={11} /> {t("Search a place in Tashkent")}
+              <Search size={11} /> {t("Search a place")}
             </label>
             <div className="relative">
               <input
@@ -168,29 +194,26 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
                 {coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : t("click map or search to pin")}
               </div>
             </div>
+            {/* Address the pin resolved to — viloyat / tuman / MFY, which the
+                bank form asks for. Read-only: derived, never re-typed. */}
+            {coords && (
+              <div className="px-4 py-2.5 border-t border-line bg-navy/[0.02] flex items-center gap-2 flex-wrap text-[11.5px]">
+                {resolving && !resolved ? (
+                  <span className="text-muted">{t("Resolving address…")}</span>
+                ) : resolved && (resolved.viloyat || resolved.district || resolved.neighborhood) ? (
+                  <>
+                    {resolved.viloyat &&      <Tag k={t("Viloyat")} v={resolved.viloyat} />}
+                    {inputs.city &&           <Tag k={t("City")} v={inputs.city} />}
+                    {resolved.district &&     <Tag k={t("Tuman")} v={resolved.district} />}
+                    {resolved.neighborhood && <Tag k={t("MFY")} v={resolved.neighborhood} />}
+                    {resolved.road &&         <Tag k={t("Street")} v={resolved.road} />}
+                  </>
+                ) : (
+                  <span className="text-muted">{t("Address could not be resolved — the agent will retry during analysis.")}</span>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-
-        {/* Administrative address — the hierarchy the bank form uses (row 3).
-            The map pin fills district; viloyat and MFY complete it, and MFY
-            is what state programmes are scoped by. */}
-        <div className="card p-5 space-y-4">
-          <div className="label">{t("Administrative address")}</div>
-          <Field label={t("Region (viloyat)")} hint={t("bank form requirement")}>
-            <input className="input" placeholder={t("e.g. Qashqadaryo")}
-              value={inputs.viloyat}
-              onChange={(e) => setInput("viloyat", e.target.value)} />
-          </Field>
-          <Field label={t("Neighbourhood (MFY)")} hint={t("state programmes are scoped by MFY")}>
-            <input className="input" placeholder={t("e.g. Navoiy mahallasi")}
-              value={inputs.mfy}
-              onChange={(e) => setInput("mfy", e.target.value)} />
-          </Field>
-          {inputs.district && (
-            <div className="text-[11px] text-muted">
-              {t("District (tuman)")}: <span className="text-navy font-semibold">{inputs.district}</span> · {t("from map pin")}
-            </div>
-          )}
         </div>
 
         {/* Site facts */}
@@ -281,6 +304,16 @@ export function LocationAgent({ onChange }: { onChange: (v: ViewKey) => void }) 
         nextHint={t("Site captured. Next: tell the Market agent your commercial plan.")}
       />
     </div>
+  );
+}
+
+/** One derived address level, shown as a read-only chip. */
+function Tag({ k, v }: { k: string; v: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-line">
+      <span className="text-[9.5px] uppercase tracking-wider text-muted font-semibold">{k}</span>
+      <span className="text-navy font-semibold">{v}</span>
+    </span>
   );
 }
 

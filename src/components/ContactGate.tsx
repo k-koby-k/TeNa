@@ -14,8 +14,12 @@ export function ContactGate({ onContinue }: { onContinue: () => void }) {
   const t = useT();
   const [name, setName] = useState(inputs.contact_name);
   const [phone, setPhone] = useState(inputs.contact_phone);
+  const [stir, setStir] = useState(inputs.stir);
   const [touched, setTouched] = useState(false);
 
+  // STIR is deliberately NOT part of `valid` — the bank asks for it (form
+  // row 1) but plenty of founders apply before registering, so it never
+  // blocks the gate.
   const valid = isContactComplete({ ...inputs, contact_name: name, contact_phone: phone });
 
   function submit() {
@@ -23,6 +27,7 @@ export function ContactGate({ onContinue }: { onContinue: () => void }) {
     if (!valid) return;
     setInput("contact_name", name.trim());
     setInput("contact_phone", phone.trim());
+    setInput("stir", stir.trim());
     onContinue();
   }
 
@@ -61,6 +66,24 @@ export function ContactGate({ onContinue }: { onContinue: () => void }) {
               onChange={(e) => setPhone(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             />
+          </label>
+
+          <label className="block">
+            <span className="label flex items-center justify-between">
+              {t("Taxpayer ID (STIR)")}
+              <span className="text-[10px] text-muted font-normal normal-case tracking-normal">{t("optional")}</span>
+            </span>
+            <input
+              className="input mt-1"
+              inputMode="numeric"
+              placeholder={t("e.g. 303 909 808")}
+              value={stir}
+              onChange={(e) => setStir(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+            />
+            <span className="block text-[11px] text-muted mt-1">
+              {t("Banks ask for this if the business is registered — you can add it later.")}
+            </span>
           </label>
 
           {touched && !valid && (

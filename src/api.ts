@@ -137,6 +137,17 @@ export interface LocationAgentResult {
 
 export interface PlaceHit { display: string; lat: number; lng: number; type: string; importance: number; }
 
+/** What a dropped pin resolves to — the administrative hierarchy the bank
+ *  loan form asks for, derived from the map rather than typed again. */
+export interface ReverseGeocodeResult {
+  district: string | null;
+  neighborhood: string | null;
+  road: string | null;
+  display: string;
+  viloyat: string | null;
+  city: string | null;
+}
+
 export interface SynthesizeResult {
   blurb: string;
   positives: string[];
@@ -230,6 +241,8 @@ export const api = {
   agentFinancials: (req: FinancialsAgentRequest) => post<FinancialsAgentResult>("/api/agent/financials", req),
   agentSynthesize: (req: any) => post<SynthesizeResult>("/api/agent/synthesize", req),
   geocodeSearch:   (q: string) => getJSON<{ items: PlaceHit[] }>(`/api/geocode/search?q=${encodeURIComponent(q)}`),
+  geocodeReverse:  (lat: number, lng: number) =>
+    getJSON<ReverseGeocodeResult>(`/api/geocode/reverse?lat=${lat}&lng=${lng}`),
   extractProfile:  (file: File) => postFile<ExtractedProfile>("/api/agent/extract-profile", file),
   voice:           (audio: Blob) => {
     const fd = new FormData();

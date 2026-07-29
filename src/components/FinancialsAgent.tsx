@@ -369,16 +369,9 @@ export function FinancialsAgent({ onChange }: { onChange: (v: ViewKey) => void }
 
       {/* Section: trading history — bank form row 6 */}
       <Section title={t("Trading history")} subtitle={t("The bank asks for the last 12 months of account turnover.")}>
-        <div className="grid grid-cols-2 gap-5">
-          <Field label={t("Is the business already trading?")} hint={t("changes how the loan is assessed")}>
-            <YesNo value={inputs.is_existing_business} onChange={(v) => setInput("is_existing_business", v)} />
-          </Field>
-          <Field label={t("Taxpayer ID (STIR)")} hint={t("optional · if already registered")}>
-            <input className="input" placeholder={t("e.g. 303 909 808")}
-              value={inputs.stir}
-              onChange={(e) => setInput("stir", e.target.value)} />
-          </Field>
-        </div>
+        <Field label={t("Is the business already trading?")} hint={t("changes how the loan is assessed")}>
+          <YesNo value={inputs.is_existing_business} onChange={(v) => setInput("is_existing_business", v)} />
+        </Field>
         {inputs.is_existing_business ? (
           <div className="grid grid-cols-2 gap-5 mt-4">
             <Field label={t("12-month turnover — credit (in)")} hint={t("UZS · money received")}>

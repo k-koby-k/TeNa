@@ -38,10 +38,15 @@ export async function searchPlaces(query: string, limit = 6): Promise<PlaceHit[]
 }
 
 export interface ReverseGeocode {
-  district: string | null;     // e.g. "Chilonzor"
-  neighborhood: string | null; // e.g. "TTZ"
+  district: string | null;     // tuman, e.g. "Chilonzor"
+  neighborhood: string | null; // MFY / mahalla, e.g. "Navoiy mahallasi"
   road: string | null;
   display: string;             // human-readable address
+  // The two outer levels of the administrative hierarchy the bank's loan
+  // form asks for (row 3: вилоят / туман / МФЙ). Derived from the same
+  // lookup — the pin already knows them, so we never ask the user twice.
+  viloyat: string | null;      // e.g. "Qashqadaryo"
+  city: string | null;         // e.g. "Qarshi"
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocode> {
@@ -51,7 +56,11 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
     signal: AbortSignal.timeout(8_000),
   });
   if (!r.ok) {
-    return { district: null, neighborhood: null, road: null, display: `(${lat.toFixed(4)}, ${lng.toFixed(4)})` };
+    return {
+      district: null, neighborhood: null, road: null,
+      display: `(${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+      viloyat: null, city: null,
+    };
   }
   const data: any = await r.json();
   const a = data.address ?? {};
@@ -61,11 +70,16 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
   );
   const neighborhood = a.neighbourhood ?? a.quarter ?? a.suburb ?? null;
   const road = a.road ?? a.pedestrian ?? null;
+  // Region sits under `state`; the city-level name varies by settlement size.
+  const viloyat = stripTumani(a.state ?? a.region ?? null);
+  const city = stripTumani(a.city ?? a.town ?? a.village ?? a.municipality ?? null);
   return {
     district,
     neighborhood: neighborhood && neighborhood !== district ? neighborhood : null,
     road,
     display: data.display_name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+    viloyat,
+    city,
   };
 }
 
@@ -77,5 +91,13 @@ function stripTumani(s: string | null): string | null {
     .replace(/\s+tumani$/i, "")
     .replace(/\s+район$/i, "")
     .replace(/\s+district$/i, "")
+    // Region and city suffixes, so "Qashqadaryo Viloyati" → "Qashqadaryo"
+    // and "Qarshi shahri" → "Qarshi".
+    .replace(/\s+viloyati$/i, "")
+    .replace(/\s+region$/i, "")
+    .replace(/\s+область$/i, "")
+    .replace(/\s+shahri$/i, "")
+    .replace(/\s+city$/i, "")
+    .replace(/\s+город$/i, "")
     .trim();
 }
